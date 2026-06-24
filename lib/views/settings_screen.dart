@@ -238,44 +238,53 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
           HapticFeedback.lightImpact();
           final ctx = context;
           if (value) {
-            final storage = SecureStorageService();
-            final savedToken = await storage.getBiometricToken();
-            if (savedToken == null) {
-              if (!mounted) return;
-              final password = await _promptForPassword();
-              if (password == null || password.isEmpty || !mounted) return;
+            try {
+              final storage = SecureStorageService();
+              final savedToken = await storage.getBiometricToken();
+              if (savedToken == null) {
+                if (!mounted) return;
+                final password = await _promptForPassword();
+                if (password == null || password.isEmpty || !mounted) return;
 
-              final secureStorage = SecureStorageService();
-              final verifierB64 = await secureStorage.getPasswordVerifier();
-              final saltB64 = await secureStorage.getKdfSalt();
+                final secureStorage = SecureStorageService();
+                final verifierB64 = await secureStorage.getPasswordVerifier();
+                final saltB64 = await secureStorage.getKdfSalt();
 
-              if (verifierB64 == null || saltB64 == null) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Password verification not available. Please restart the app.')),
-                  );
+                if (verifierB64 == null || saltB64 == null) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Password verification not available. Please restart the app.')),
+                    );
+                  }
+                  return;
                 }
-                return;
-              }
 
-              final keyService = KeyService();
-              final salt = base64Decode(saltB64);
-              final derivedKey = await keyService.deriveKey(password, salt);
-              final candidate = keyService.computeVerifier(derivedKey);
-              final storedVerifier = base64Decode(verifierB64);
+                final keyService = KeyService();
+                final salt = base64Decode(saltB64);
+                final derivedKey = await keyService.deriveKey(password, salt);
+                final candidate = keyService.computeVerifier(derivedKey);
+                final storedVerifier = base64Decode(verifierB64);
 
-              if (!keyService.constantTimeEquals(candidate, storedVerifier)) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Incorrect password')),
-                  );
+                if (!keyService.constantTimeEquals(candidate, storedVerifier)) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Incorrect password')),
+                    );
+                  }
+                  return;
                 }
-                return;
-              }
 
-              final token = KeyService.computeBiometricToken(derivedKey);
-              await storage.saveBiometricToken(token);
-              await storage.saveBiometricKeyData(derivedKey);
+                final token = KeyService.computeBiometricToken(derivedKey);
+                await storage.saveBiometricToken(token);
+                await storage.saveBiometricKeyData(derivedKey);
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(content: Text('Failed to enable biometric: $e'), behavior: SnackBarBehavior.floating),
+                );
+              }
+              return;
             }
           }
           await _biometricService.setBiometricLoginEnabled(value);
@@ -388,7 +397,18 @@ void _showPasswordDialog(BuildContext context, WidgetRef ref) {
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
               Navigator.of(dialogContext).pop();
-              await _exportBackup(context, passwordController.text, t);
+              try {
+                await _exportBackup(context, passwordController.text, t);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export failed: $e'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
             },
             child: Text(t('proceed')),
           ),
@@ -494,13 +514,24 @@ void _showImportPasswordDialog(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
               Navigator.of(dialogContext).pop();
-              await _importBackup(
-                context,
-                ref,
-                passwordController.text,
-                fileBytes,
-                t,
-              );
+              try {
+                await _importBackup(
+                  context,
+                  ref,
+                  passwordController.text,
+                  fileBytes,
+                  t,
+                );
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Import failed: $e'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
             },
             child: Text(t('proceed')),
           ),

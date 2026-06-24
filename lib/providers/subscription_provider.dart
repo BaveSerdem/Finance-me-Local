@@ -40,12 +40,14 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
     try {
       await _box.add(subscription);
     } catch (_) {
-      return;
+      rethrow;
     }
     state = [...state, subscription];
 
     if (!isPaused && notifyDayBefore) {
-      await NotificationService().scheduleNotification(subscription);
+      try {
+        await NotificationService().scheduleNotification(subscription);
+      } catch (_) {}
     }
   }
 
@@ -53,11 +55,13 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
     try {
       await subscription.delete();
     } catch (_) {
-      return;
+      rethrow;
     }
     state = state.where((s) => s.id != subscription.id).toList();
 
-    await NotificationService().cancelNotification(subscription.id);
+    try {
+      await NotificationService().cancelNotification(subscription.id);
+    } catch (_) {}
   }
 
   Future<void> updateSubscription({
@@ -82,13 +86,17 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
     try {
       await existing.save();
     } catch (_) {
-      return;
+      rethrow;
     }
     state = state.map((s) => s.id == existing.id ? existing : s).toList();
 
-    await NotificationService().cancelNotification(existing.id);
+    try {
+      await NotificationService().cancelNotification(existing.id);
+    } catch (_) {}
     if (!isPaused && notifyDayBefore) {
-      await NotificationService().scheduleNotification(existing);
+      try {
+        await NotificationService().scheduleNotification(existing);
+      } catch (_) {}
     }
   }
 
@@ -97,14 +105,16 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
     try {
       await sub.save();
     } catch (_) {
-      return;
+      rethrow;
     }
     state = state.map((s) => s.id == sub.id ? sub : s).toList();
 
-    if (sub.isPaused) {
-      await NotificationService().cancelNotification(sub.id);
-    } else if (sub.notifyDayBefore) {
-      await NotificationService().scheduleNotification(sub);
-    }
+    try {
+      if (sub.isPaused) {
+        await NotificationService().cancelNotification(sub.id);
+      } else if (sub.notifyDayBefore) {
+        await NotificationService().scheduleNotification(sub);
+      }
+    } catch (_) {}
   }
 }

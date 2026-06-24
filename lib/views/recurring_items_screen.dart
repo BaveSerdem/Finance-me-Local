@@ -107,7 +107,20 @@ class _RecurringItemsScreenState extends ConsumerState<RecurringItemsScreen>
         final item = items[index];
         return _RecurringItemCard(
           item: item,
-          onTogglePause: () => ref.read(subscriptionProvider.notifier).togglePause(item),
+          onTogglePause: () async {
+            try {
+              await ref.read(subscriptionProvider.notifier).togglePause(item);
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+          },
           onEdit: () => _showForm(item, item.type),
           onDelete: () => _confirmDelete(item),
         );
@@ -132,8 +145,19 @@ class _RecurringItemsScreenState extends ConsumerState<RecurringItemsScreen>
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(subscriptionProvider.notifier).deleteSubscription(item);
+              try {
+                await ref.read(subscriptionProvider.notifier).deleteSubscription(item);
+                if (ctx.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete: $e'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
             },
             child: Text(t('delete')),
           ),
@@ -372,33 +396,44 @@ class _RecurringFormSheetState extends ConsumerState<_RecurringFormSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (!_isEditing) {
-      await ref.read(subscriptionProvider.notifier).addSubscription(
-        name: _nameController.text.trim(),
-        amount: double.parse(_amountController.text),
-        type: _type,
-        billingCycle: _billingCycle,
-        startDate: _startDate,
-        nextDueDate: _nextDueDate,
-        isPaused: _isPaused,
-        notifyDayBefore: _notifyDayBefore,
-      );
-    } else {
-      final existing = widget.existing!;
-      await ref.read(subscriptionProvider.notifier).updateSubscription(
-        existing: existing,
-        name: _nameController.text.trim(),
-        amount: double.parse(_amountController.text),
-        type: _type,
-        billingCycle: _billingCycle,
-        startDate: _startDate,
-        nextDueDate: _nextDueDate,
-        isPaused: _isPaused,
-        notifyDayBefore: _notifyDayBefore,
-      );
+    try {
+      if (!_isEditing) {
+        await ref.read(subscriptionProvider.notifier).addSubscription(
+          name: _nameController.text.trim(),
+          amount: double.parse(_amountController.text),
+          type: _type,
+          billingCycle: _billingCycle,
+          startDate: _startDate,
+          nextDueDate: _nextDueDate,
+          isPaused: _isPaused,
+          notifyDayBefore: _notifyDayBefore,
+        );
+      } else {
+        final existing = widget.existing!;
+        await ref.read(subscriptionProvider.notifier).updateSubscription(
+          existing: existing,
+          name: _nameController.text.trim(),
+          amount: double.parse(_amountController.text),
+          type: _type,
+          billingCycle: _billingCycle,
+          startDate: _startDate,
+          nextDueDate: _nextDueDate,
+          isPaused: _isPaused,
+          notifyDayBefore: _notifyDayBefore,
+        );
+      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
-    if (!mounted) return;
-    Navigator.of(context).pop();
   }
 }
 

@@ -11,7 +11,6 @@ import '../providers/customization_provider.dart';
 import '../providers/app_colors.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/subscription_provider.dart';
-import '../services/database_service.dart';
 import '../localization/locale_provider.dart';
 import 'settings_screen.dart';
 import 'analytics_screen.dart';
@@ -208,20 +207,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               isPaused,
               notifyDayBefore,
             ) async {
-              final notifier = ref.read(subscriptionProvider.notifier);
-              await notifier.updateSubscription(
-                existing: subscription,
-                name: name,
-                amount: amount,
-                type: type,
-                billingCycle: billingCycle,
-                startDate: startDate,
-                nextDueDate: nextDueDate,
-                isPaused: isPaused,
-                notifyDayBefore: notifyDayBefore,
-              );
-              if (!disableFeedback) HapticFeedback.mediumImpact();
-              if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+              try {
+                final notifier = ref.read(subscriptionProvider.notifier);
+                await notifier.updateSubscription(
+                  existing: subscription,
+                  name: name,
+                  amount: amount,
+                  type: type,
+                  billingCycle: billingCycle,
+                  startDate: startDate,
+                  nextDueDate: nextDueDate,
+                  isPaused: isPaused,
+                  notifyDayBefore: notifyDayBefore,
+                );
+                if (!disableFeedback) HapticFeedback.mediumImpact();
+                if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+              } catch (e) {
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
             },
           );
         }
@@ -229,25 +239,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           existing: transaction,
           forceIsExpense: forceIsExpense,
           onSave: (title, amount, date, isExpense) async {
-            final notifier = ref.read(transactionProvider.notifier);
-            if (transaction != null) {
-              await notifier.updateTransaction(
-                existing: transaction,
-                title: title,
-                amount: amount,
-                date: date,
-                isExpense: isExpense,
-              );
-            } else {
-              await notifier.addTransaction(
-                title: title,
-                amount: amount,
-                date: date,
-                isExpense: isExpense,
-              );
+            try {
+              final notifier = ref.read(transactionProvider.notifier);
+              if (transaction != null) {
+                await notifier.updateTransaction(
+                  existing: transaction,
+                  title: title,
+                  amount: amount,
+                  date: date,
+                  isExpense: isExpense,
+                );
+              } else {
+                await notifier.addTransaction(
+                  title: title,
+                  amount: amount,
+                  date: date,
+                  isExpense: isExpense,
+                );
+              }
+              if (!disableFeedback) HapticFeedback.mediumImpact();
+              if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+            } catch (e) {
+              if (sheetContext.mounted) {
+                ScaffoldMessenger.of(sheetContext).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             }
-            if (!disableFeedback) HapticFeedback.mediumImpact();
-            if (sheetContext.mounted) Navigator.of(sheetContext).pop();
           },
         );
       },
@@ -311,8 +332,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
               onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                await onConfirm();
+                try {
+                  await onConfirm();
+                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete: $e'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
               },
               child: Text(t('delete')),
             ),
@@ -527,13 +559,20 @@ class _BalanceHeader extends ConsumerWidget {
             FilledButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-                Navigator.of(dialogContext).pop();
                 final value = double.parse(controller.text);
-                await DatabaseService().settingsBox.put(
-                  'adjusted_balance',
-                  value.toString(),
-                );
-                ref.read(adjustedBalanceProvider.notifier).refresh();
+                try {
+                  await ref.read(adjustedBalanceProvider.notifier).setBalance(value);
+                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to save balance: $e'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
               },
               child: Text(t('save')),
             ),
