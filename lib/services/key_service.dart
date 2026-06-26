@@ -28,6 +28,16 @@ class KeyService {
     return result;
   }
 
+  Future<(Uint8List key, Uint8List salt)> deriveNewKey(
+    String newPassword,
+  ) async {
+    final newSalt = generateSalt();
+    final newKey = await Isolate.run(
+      () => _stretchKey(newPassword, newSalt),
+    );
+    return (newKey, newSalt);
+  }
+
   void clearCache() {
     _cachedKey = null;
   }

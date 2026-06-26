@@ -105,6 +105,71 @@ class DatabaseService {
     _boxesOpened = false;
   }
 
+  Future<void> reEncryptBoxes(
+    Uint8List oldKey,
+    Uint8List newKey,
+  ) async {
+    final txMap = _transactionsBox!.toMap();
+    final subMap = _subscriptionsBox!.toMap();
+
+    final freshTx = txMap.map((k, v) => MapEntry(k, _copyTransaction(v)));
+    final freshSub = txMap.isEmpty
+        ? subMap.map((k, v) => MapEntry(k, _copySubscription(v)))
+        : subMap.map((k, v) => MapEntry(k, _copySubscription(v)));
+
+    await _transactionsBox!.deleteFromDisk();
+    await _subscriptionsBox!.deleteFromDisk();
+    _transactionsBox = null;
+    _subscriptionsBox = null;
+
+    final newCipher = HiveAesCipher(newKey);
+    _transactionsBox = await Hive.openBox<TransactionModel>(
+      _transactionsBoxName,
+      encryptionCipher: newCipher,
+    );
+    _subscriptionsBox = await Hive.openBox<SubscriptionModel>(
+      _subscriptionsBoxName,
+      encryptionCipher: newCipher,
+    );
+
+    if (freshTx.isNotEmpty) {
+      await _transactionsBox!.putAll(freshTx);
+      await _transactionsBox!.flush();
+    }
+    if (freshSub.isNotEmpty) {
+      await _subscriptionsBox!.putAll(freshSub);
+      await _subscriptionsBox!.flush();
+    }
+
+    _boxesOpened = true;
+  }
+
+  TransactionModel _copyTransaction(TransactionModel src) {
+    final copy = TransactionModel(
+      title: src.title,
+      amount: src.amount,
+      date: src.date,
+      isExpense: src.isExpense,
+    );
+    copy.isRecurring = src.isRecurring;
+    return copy;
+  }
+
+  SubscriptionModel _copySubscription(SubscriptionModel src) {
+    return SubscriptionModel(
+      name: src.name,
+      amount: src.amount,
+      type: src.type,
+      billingCycle: src.billingCycle,
+      startDate: src.startDate,
+      nextDueDate: src.nextDueDate,
+      isPaused: src.isPaused,
+      notifyDayBefore: src.notifyDayBefore,
+      id: src.id,
+      createdAt: src.createdAt,
+    );
+  }
+
   Future<void> close() async {
     await _transactionsBox?.close();
     await _subscriptionsBox?.close();

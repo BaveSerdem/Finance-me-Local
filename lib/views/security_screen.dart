@@ -11,36 +11,44 @@ import '../services/key_service.dart';
 import '../services/secure_storage_service.dart';
 import '../services/database_service.dart';
 import '../localization/locale_provider.dart';
-import 'customization_screen.dart';
-import 'security_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+class SecurityScreen extends ConsumerWidget {
+  const SecurityScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final t = ref.watch(stringsProvider);
-
     return Scaffold(
-      appBar: AppBar(title: Text(t('settings')), centerTitle: true),
+      appBar: AppBar(
+        title: Text(t('security_privacy')),
+        centerTitle: true,
+      ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
-          _CustomizationTile(),
+          _SectionHeader(title: t('authentication'), colorScheme: colorScheme),
+          _BiometricTile(),
           const Divider(height: 32),
-          _SectionHeader(title: t('language'), colorScheme: colorScheme),
-          const _LanguageTile(),
+          _SectionHeader(title: t('password'), colorScheme: colorScheme),
+          const _ChangePasswordTile(),
           const Divider(height: 32),
-          const Divider(height: 32),
-          _SectionHeader(title: t('security_privacy'), colorScheme: colorScheme),
-          _SecurityTile(),
-          const Divider(height: 32),
+          _SectionHeader(title: 'Danger Zone', colorScheme: colorScheme),
+          _ExportTile(),
+          const SizedBox(height: 8),
+          _ImportTile(),
+          const SizedBox(height: 8),
+          const _DeleteAllDataTile(),
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Section Header
+// ---------------------------------------------------------------------------
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title, required this.colorScheme});
@@ -58,72 +66,6 @@ class _SectionHeader extends StatelessWidget {
           color: colorScheme.primary,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Customization
-// ---------------------------------------------------------------------------
-
-class _CustomizationTile extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = ref.watch(stringsProvider);
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.palette_outlined),
-        title: Text(t('customization')),
-        subtitle: Text(t('customization_subtitle')),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const CustomizationScreen()),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Language
-// ---------------------------------------------------------------------------
-
-class _LanguageTile extends ConsumerWidget {
-  const _LanguageTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final locale = ref.watch(localeProvider);
-    final t = ref.watch(stringsProvider);
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.language),
-        title: Text(t('language')),
-        trailing: DropdownButton<String>(
-          value: locale.languageCode,
-          underline: const SizedBox(),
-          items: [
-            DropdownMenuItem(value: 'en', child: Text(t('english'))),
-            const DropdownMenuItem(value: 'ar', child: Text('العربية')),
-            const DropdownMenuItem(value: 'ru', child: Text('Русский')),
-            const DropdownMenuItem(value: 'de', child: Text('Deutsch')),
-            const DropdownMenuItem(value: 'ku', child: Text('Kurdî')),
-            const DropdownMenuItem(value: 'tr', child: Text('Türkçe')),
-          ],
-          onChanged: (lang) {
-            if (lang != null) {
-              try {
-                HapticFeedback.lightImpact();
-                ref.read(localeProvider.notifier).setLocale(lang);
-              } catch (_) {
-              }
-            }
-          },
         ),
       ),
     );
@@ -285,6 +227,311 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
           await _biometricService.setBiometricLoginEnabled(value);
           setState(() => _biometricEnabled = value);
         },
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Change Password
+// ---------------------------------------------------------------------------
+
+class _ChangePasswordTile extends ConsumerStatefulWidget {
+  const _ChangePasswordTile();
+
+  @override
+  ConsumerState<_ChangePasswordTile> createState() =>
+      _ChangePasswordTileState();
+}
+
+class _ChangePasswordTileState
+    extends ConsumerState<_ChangePasswordTile> {
+  final bool _loading = false;
+
+  Future<void> _onTap() async {
+    HapticFeedback.lightImpact();
+    final oldKey = await _verifyIdentity();
+    if (oldKey == null || !mounted) return;
+    await _showNewPasswordDialog(oldKey);
+  }
+
+  Future<Uint8List?> _verifyIdentity() async {
+    final secureStorage = SecureStorageService();
+    final verifierB64 = await secureStorage.getPasswordVerifier();
+    final saltB64 = await secureStorage.getKdfSalt();
+    if (verifierB64 == null || saltB64 == null) return null;
+
+    final biometricEnabled =
+        await BiometricService(
+          secureStorage: secureStorage,
+        ).isBiometricLoginEnabled();
+
+    if (!mounted) return null;
+
+    if (biometricEnabled) {
+      final usesBiometric = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Verify Identity'),
+          content: const Text(
+            'Use your current password or fingerprint to continue.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Use Password'),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.fingerprint),
+              label: const Text('Use Fingerprint'),
+              onPressed: () => Navigator.pop(ctx, true),
+            ),
+          ],
+        ),
+      );
+      if (usesBiometric == null) return null;
+
+      if (usesBiometric) {
+        final biometricService = BiometricService(
+          secureStorage: secureStorage,
+        );
+        final authenticated = await biometricService.authenticate();
+        if (!authenticated || !mounted) return null;
+        final keyDataB64 = await secureStorage.getBiometricKeyData();
+        if (keyDataB64 == null) return null;
+        return base64Decode(keyDataB64);
+      }
+    }
+
+    if (!mounted) return null;
+    final password = await _promptCurrentPassword();
+    if (password == null || password.isEmpty) return null;
+
+    final keyService = KeyService();
+    final salt = base64Decode(saltB64);
+    final derivedKey = await keyService.deriveKey(password, salt);
+    final candidate = keyService.computeVerifier(derivedKey);
+    final storedVerifier = base64Decode(verifierB64);
+
+    if (!keyService.constantTimeEquals(candidate, storedVerifier)) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Incorrect password'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return null;
+    }
+    return derivedKey;
+  }
+
+  Future<String?> _promptCurrentPassword() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        var isEmpty = true;
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Current Password'),
+            content: TextField(
+              controller: controller,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Enter your current password',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) {
+                final empty = v.isEmpty;
+                if (empty != isEmpty) {
+                  setDialogState(() => isEmpty = empty);
+                }
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed:
+                    isEmpty ? null : () => Navigator.pop(ctx, controller.text),
+                child: const Text('Verify'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    controller.dispose();
+    return result;
+  }
+
+  Future<void> _showNewPasswordDialog(Uint8List oldKey) async {
+    final newPassController = TextEditingController();
+    final confirmController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Password'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: newPassController,
+                obscureText: true,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) =>
+                    v == null || v.length < 4 ? 'Too short' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: confirmController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm New Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) =>
+                    v != newPassController.text
+                        ? 'Passwords do not match'
+                        : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: const Text('Change Password'),
+          ),
+        ],
+      ),
+    );
+
+    final newPassword = newPassController.text;
+    newPassController.dispose();
+    confirmController.dispose();
+
+    if (confirmed != true || !mounted) return;
+    await _performPasswordChange(oldKey, newPassword);
+  }
+
+  Future<void> _performPasswordChange(
+    Uint8List oldKey,
+    String newPassword,
+  ) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text(
+                'Changing password...',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Do not close the app.',
+                style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.error,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final keyService = KeyService();
+      final secureStorage = SecureStorageService();
+
+      final (newKey, newSalt) = await keyService.deriveNewKey(newPassword);
+
+      await DatabaseService().reEncryptBoxes(oldKey, newKey);
+
+      final newVerifier = keyService.computeVerifier(newKey);
+      await secureStorage.savePasswordVerifier(base64Encode(newVerifier));
+      await secureStorage.saveKdfSalt(base64Encode(newSalt));
+
+      keyService.clearCache();
+
+      final biometricEnabled =
+          await BiometricService(
+            secureStorage: secureStorage,
+          ).isBiometricLoginEnabled();
+
+      if (biometricEnabled) {
+        final newToken = KeyService.computeBiometricToken(newKey);
+        await secureStorage.saveBiometricToken(newToken);
+        await secureStorage.saveBiometricKeyData(newKey);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password changed successfully'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to change password: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.lock_reset_outlined),
+        title: const Text('Change Password'),
+        subtitle: const Text('Update your app unlock password'),
+        trailing: _loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.chevron_right),
+        onTap: _loading ? null : _onTap,
       ),
     );
   }
@@ -849,33 +1096,6 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
         ),
         trailing: Icon(Icons.chevron_right, color: colorScheme.error),
         onTap: _deleting ? null : _showPasswordDialog,
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Security Tile (navigates to SecurityScreen)
-// ---------------------------------------------------------------------------
-
-class _SecurityTile extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = ref.watch(stringsProvider);
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.security_outlined),
-        title: Text(t('security_privacy')),
-        subtitle: Text(t('security_privacy_subtitle')),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const SecurityScreen(),
-            ),
-          );
-        },
       ),
     );
   }
