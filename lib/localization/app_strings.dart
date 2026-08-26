@@ -1,3 +1,13 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 class AppStrings {
   AppStrings._();
 
@@ -298,6 +308,38 @@ class AppStrings {
       'ku': 'Qefala biyometrîk neçalak e',
       'tr': 'Biyometrik kilit kapalı',
     },
+    'colorblind_safe_sub': {
+      'en': 'Blue and orange instead of green and red',
+      'ar': 'أزرق وبرتقالي بدل الأخضر والأحمر',
+      'ru': 'Синий и оранжевый вместо зелёного и красного',
+      'de': 'Blau und Orange statt Grün und Rot',
+      'ku': 'Şîn û pirteqalî li şûna kesk û sor',
+      'tr': 'Yeşil ve kırmızı yerine mavi ve turuncu',
+    },
+    'biometric_lock_subtitle': {
+      'en': 'Unlock with your fingerprint instead of typing',
+      'ar': 'افتح ببصمتك بدل كتابة كلمة المرور',
+      'ru': 'Разблокировка отпечатком вместо ввода пароля',
+      'de': 'Mit Fingerabdruck statt Eingabe entsperren',
+      'ku': 'Bi şopa tiliyê veke, ne bi nivîsandinê',
+      'tr': 'Parola yazmak yerine parmak iziyle aç',
+    },
+    'export_backup_subtitle': {
+      'en': 'Save an encrypted copy of your data',
+      'ar': 'احفظ نسخة مشفّرة من بياناتك',
+      'ru': 'Сохранить зашифрованную копию данных',
+      'de': 'Verschlüsselte Kopie Ihrer Daten sichern',
+      'ku': 'Kopîyeke şîfrekirî ya daneyên xwe tomar bike',
+      'tr': 'Verilerinizin şifreli bir kopyasını kaydedin',
+    },
+    'import_backup_subtitle': {
+      'en': 'Restore data from a backup file',
+      'ar': 'استعد بياناتك من ملف نسخة احتياطية',
+      'ru': 'Восстановить данные из файла резервной копии',
+      'de': 'Daten aus einer Sicherungsdatei wiederherstellen',
+      'ku': 'Daneyan ji pelê paşekêşê vegerîne',
+      'tr': 'Verileri bir yedek dosyasından geri yükleyin',
+    },
     'language': {
       'en': 'Language',
       'ar': 'اللغة',
@@ -523,6 +565,126 @@ class AppStrings {
       'de': 'Abbrechen',
       'ku': 'Betal',
       'tr': 'İptal',
+    },
+    'confirm': {
+      'en': 'Confirm',
+      'ar': 'تأكيد',
+      'ru': 'Подтвердить',
+      'de': 'Bestätigen',
+      'ku': 'Piştrast bike',
+      'tr': 'Onayla',
+    },
+    'enter_password': {
+      'en': 'Enter Password',
+      'ar': 'أدخل كلمة المرور',
+      'ru': 'Введите пароль',
+      'de': 'Passwort eingeben',
+      'ku': 'Şîfreyê binivîse',
+      'tr': 'Parolayı girin',
+    },
+    'your_app_password': {
+      'en': 'Your app password',
+      'ar': 'كلمة مرور التطبيق',
+      'ru': 'Пароль приложения',
+      'de': 'App-Passwort',
+      'ku': 'Şîfreya sepanê',
+      'tr': 'Uygulama parolanız',
+    },
+    'current_password': {
+      'en': 'Current Password',
+      'ar': 'كلمة المرور الحالية',
+      'ru': 'Текущий пароль',
+      'de': 'Aktuelles Passwort',
+      'ku': 'Şîfreya heyî',
+      'tr': 'Mevcut parola',
+    },
+    'enter_current_password': {
+      'en': 'Enter your current password',
+      'ar': 'أدخل كلمة المرور الحالية',
+      'ru': 'Введите текущий пароль',
+      'de': 'Aktuelles Passwort eingeben',
+      'ku': 'Şîfreya xwe ya heyî binivîse',
+      'tr': 'Mevcut parolanızı girin',
+    },
+    'verify': {
+      'en': 'Verify',
+      'ar': 'تحقّق',
+      'ru': 'Проверить',
+      'de': 'Bestätigen',
+      'ku': 'Verast bike',
+      'tr': 'Doğrula',
+    },
+    'new_password': {
+      'en': 'New Password',
+      'ar': 'كلمة المرور الجديدة',
+      'ru': 'Новый пароль',
+      'de': 'Neues Passwort',
+      'ku': 'Şîfreya nû',
+      'tr': 'Yeni parola',
+    },
+    'confirm_new_password': {
+      'en': 'Confirm New Password',
+      'ar': 'تأكيد كلمة المرور الجديدة',
+      'ru': 'Подтвердите новый пароль',
+      'de': 'Neues Passwort bestätigen',
+      'ku': 'Şîfreya nû piştrast bike',
+      'tr': 'Yeni parolayı onaylayın',
+    },
+    'change_password': {
+      'en': 'Change Password',
+      'ar': 'تغيير كلمة المرور',
+      'ru': 'Изменить пароль',
+      'de': 'Passwort ändern',
+      'ku': 'Şîfreyê biguhere',
+      'tr': 'Parolayı değiştir',
+    },
+    'password_too_short': {
+      'en': 'At least 6 characters',
+      'ar': '٦ محارف على الأقل',
+      'ru': 'Минимум 6 символов',
+      'de': 'Mindestens 6 Zeichen',
+      'ku': 'Herî kêm 6 tîp',
+      'tr': 'En az 6 karakter',
+    },
+    'currency_code': {
+      'en': 'Currency',
+      'ar': 'العملة',
+      'ru': 'Валюта',
+      'de': 'Währung',
+      'ku': 'Dirav',
+      'tr': 'Para birimi',
+    },
+    'reduce_animations': {
+      'en': 'Reduce animations',
+      'ar': 'تقليل الحركة',
+      'ru': 'Уменьшить анимацию',
+      'de': 'Animationen reduzieren',
+      'ku': 'Anîmasyonan kêm bike',
+      'tr': 'Animasyonları azalt',
+    },
+    'reduce_animations_sub': {
+      'en': 'Turns off transitions and haptic feedback',
+      'ar': 'يوقف الانتقالات والاهتزاز',
+      'ru': 'Отключает переходы и вибрацию',
+      'de': 'Deaktiviert Übergänge und Haptik',
+      'ku': 'Veguhastin û lerzê digire',
+      'tr': 'Geçişleri ve titreşimi kapatır',
+    },
+    'paused_state': {
+      'en': 'Paused',
+      'ar': 'موقوف',
+      'ru': 'Приостановлено',
+      'de': 'Pausiert',
+      'ku': 'Rawestiyaye',
+      'tr': 'Duraklatıldı',
+    },
+    'error_generic': {
+      'en': 'Something went wrong',
+      'ar': 'حدث خطأ',
+      'ru': 'Произошла ошибка',
+      'de': 'Etwas ist schiefgelaufen',
+      'ku': 'Tiştek çewt çû',
+      'tr': 'Bir hata oluştu',
     },
     'proceed': {
       'en': 'Proceed',
@@ -1572,11 +1734,791 @@ class AppStrings {
       'ku': 'Gradienta Standard',
       'tr': 'Varsayılan Gradyan',
     },
+
+    // ---- Security: Danger Zone ----
+    'danger_zone': {
+      'en': 'Danger Zone',
+      'ar': 'منطقة الخطر',
+      'ru': 'Опасная зона',
+      'de': 'Gefahrenbereich',
+      'ku': 'Herêma Metirsiyê',
+      'tr': 'Tehlikeli Bölge',
+    },
+    'delete_all_data': {
+      'en': 'Delete All Data',
+      'ar': 'حذف كل البيانات',
+      'ru': 'Удалить все данные',
+      'de': 'Alle Daten löschen',
+      'ku': 'Hemû Daneyan Jê Bibe',
+      'tr': 'Tüm Verileri Sil',
+    },
+    'delete_all_data_subtitle': {
+      'en': 'Erase all transactions, subscriptions, and settings',
+      'ar': 'مسح كل المعاملات والاشتراكات والإعدادات',
+      'ru': 'Стереть все транзакции, подписки и настройки',
+      'de': 'Alle Transaktionen, Abonnements und Einstellungen löschen',
+      'ku': 'Hemû danûstandin, abonetî û mîhengan jê bibe',
+      'tr': 'Tüm işlemleri, abonelikleri ve ayarları sil',
+    },
+    'delete_all_warning': {
+      'en':
+          'This will permanently erase all your transactions, subscriptions, '
+          'and settings. Encrypted data will be unrecoverable.',
+      'ar':
+          'سيؤدي هذا إلى مسح كل معاملاتك واشتراكاتك وإعداداتك نهائياً. '
+          'البيانات المشفرة لن تكون قابلة للاسترداد.',
+      'ru':
+          'Это навсегда удалит все ваши транзакции, подписки и настройки. '
+          'Зашифрованные данные будет невозможно восстановить.',
+      'de':
+          'Dies löscht dauerhaft alle Ihre Transaktionen, Abonnements und '
+          'Einstellungen. Verschlüsselte Daten sind nicht wiederherstellbar.',
+      'ku':
+          'Ev ê hemû danûstandin, abonetî û mîhengên te bi awayekî daîmî jê '
+          'bibe. Daneyên şîfrekirî nayên vegerandin.',
+      'tr':
+          'Bu, tüm işlemlerinizi, aboneliklerinizi ve ayarlarınızı kalıcı '
+          'olarak siler. Şifrelenmiş veriler kurtarılamaz.',
+    },
+    'delete_all_ack_undone': {
+      'en': 'I understand this action cannot be undone',
+      'ar': 'أفهم أن هذا الإجراء لا يمكن التراجع عنه',
+      'ru': 'Я понимаю, что это действие нельзя отменить',
+      'de': 'Ich verstehe, dass dies nicht rückgängig gemacht werden kann',
+      'ku': 'Ez fêhm dikim ku ev kirin nayê vegerandin',
+      'tr': 'Bu işlemin geri alınamayacağını anlıyorum',
+    },
+    'delete_all_ack_responsibility': {
+      'en': 'I take full responsibility',
+      'ar': 'أتحمل المسؤولية كاملة',
+      'ru': 'Я беру на себя полную ответственность',
+      'de': 'Ich übernehme die volle Verantwortung',
+      'ku': 'Ez berpirsiyariya tevahî digirim ser xwe',
+      'tr': 'Tüm sorumluluğu kabul ediyorum',
+    },
+    'delete_all_type_confirm': {
+      'en': 'Type {word} to confirm',
+      'ar': 'اكتب {word} للتأكيد',
+      'ru': 'Введите {word} для подтверждения',
+      'de': 'Geben Sie {word} zur Bestätigung ein',
+      'ku': '{word} binivîse ji bo pejirandinê',
+      'tr': 'Onaylamak için {word} yazın',
+    },
+    'delete_everything': {
+      'en': 'Delete Everything',
+      'ar': 'احذف كل شيء',
+      'ru': 'Удалить всё',
+      'de': 'Alles löschen',
+      'ku': 'Her Tiştî Jê Bibe',
+      'tr': 'Her Şeyi Sil',
+    },
+    'delete_all_failed': {
+      'en': 'Failed to delete data: {message}. Please try again.',
+      'ar': 'فشل حذف البيانات: {message}. يرجى المحاولة مرة أخرى.',
+      'ru': 'Не удалось удалить данные: {message}. Пожалуйста, попробуйте ещё раз.',
+      'de': 'Daten konnten nicht gelöscht werden: {message}. Bitte erneut versuchen.',
+      'ku': 'Daneyên nehatin jêbirin: {message}. Ji kerema xwe careke din biceribîne.',
+      'tr': 'Veriler silinemedi: {message}. Lütfen tekrar deneyin.',
+    },
+
+    // ---- Security: identity & password ----
+    'incorrect_password': {
+      'en': 'Incorrect password',
+      'ar': 'كلمة مرور خاطئة',
+      'ru': 'Неверный пароль',
+      'de': 'Falsches Passwort',
+      'ku': 'Şîfre çewt e',
+      'tr': 'Yanlış parola',
+    },
+    'password_verify_unavailable': {
+      'en': 'Password verification not available. Please restart the app.',
+      'ar': 'التحقق من كلمة المرور غير متاح. الرجاء إعادة تشغيل التطبيق.',
+      'ru': 'Проверка пароля недоступна. Перезапустите приложение.',
+      'de': 'Passwortprüfung nicht verfügbar. Bitte App neu starten.',
+      'ku': 'Verastkirina şîfreyê tune ye. Ji kerema xwe sepanê ji nû ve veke.',
+      'tr': 'Parola doğrulaması kullanılamıyor. Lütfen uygulamayı yeniden başlatın.',
+    },
+    'failed_enable_biometric': {
+      'en': 'Failed to enable biometric',
+      'ar': 'تعذّر تفعيل البصمة',
+      'ru': 'Не удалось включить биометрию',
+      'de': 'Biometrie konnte nicht aktiviert werden',
+      'ku': 'Çalakkirina biyometrîkê bi ser neket',
+      'tr': 'Biyometrik etkinleştirilemedi',
+    },
+    'verify_identity': {
+      'en': 'Verify Identity',
+      'ar': 'تحقق من الهوية',
+      'ru': 'Подтвердите личность',
+      'de': 'Identität bestätigen',
+      'ku': 'Nasnameyê Piştrast Bike',
+      'tr': 'Kimliği Doğrula',
+    },
+    'verify_identity_body': {
+      'en': 'Use your current password or fingerprint to continue.',
+      'ar': 'استخدم كلمة المرور الحالية أو بصمتك للمتابعة.',
+      'ru': 'Используйте текущий пароль или отпечаток пальца для продолжения.',
+      'de': 'Verwenden Sie Ihr aktuelles Passwort oder Ihren Fingerabdruck.',
+      'ku': 'Ji bo berdewamiyê şîfreya xwe ya heyî an şopa tiliyê bikar bîne.',
+      'tr': 'Devam etmek için mevcut parolanızı veya parmak izinizi kullanın.',
+    },
+    'use_password': {
+      'en': 'Use Password',
+      'ar': 'استخدم كلمة المرور',
+      'ru': 'Использовать пароль',
+      'de': 'Passwort verwenden',
+      'ku': 'Şîfreyê Bikar Bîne',
+      'tr': 'Parola Kullan',
+    },
+    'use_fingerprint': {
+      'en': 'Use Fingerprint',
+      'ar': 'استخدم البصمة',
+      'ru': 'Использовать отпечаток',
+      'de': 'Fingerabdruck verwenden',
+      'ku': 'Şopa Tiliyê Bikar Bîne',
+      'tr': 'Parmak İzi Kullan',
+    },
+    'change_password_subtitle': {
+      'en': 'Update your app unlock password',
+      'ar': 'حدّث كلمة مرور فتح التطبيق',
+      'ru': 'Обновите пароль разблокировки приложения',
+      'de': 'Passwort zum Entsperren der App ändern',
+      'ku': 'Şîfreya vekirina sepanê nû bike',
+      'tr': 'Uygulama kilit açma parolanızı güncelleyin',
+    },
+    'changing_password': {
+      'en': 'Changing password...',
+      'ar': 'جاري تغيير كلمة المرور...',
+      'ru': 'Изменение пароля...',
+      'de': 'Passwort wird geändert...',
+      'ku': 'Şîfre tê guhertin...',
+      'tr': 'Parola değiştiriliyor...',
+    },
+    'do_not_close_app': {
+      'en': 'Do not close the app.',
+      'ar': 'لا تغلق التطبيق.',
+      'ru': 'Не закрывайте приложение.',
+      'de': 'Schließen Sie die App nicht.',
+      'ku': 'Sepanê negire.',
+      'tr': 'Uygulamayı kapatmayın.',
+    },
+    'password_changed_success': {
+      'en': 'Password changed successfully',
+      'ar': 'تم تغيير كلمة المرور بنجاح',
+      'ru': 'Пароль успешно изменён',
+      'de': 'Passwort erfolgreich geändert',
+      'ku': 'Şîfre bi serkeftî hate guhertin',
+      'tr': 'Parola başarıyla değiştirildi',
+    },
+    'failed_change_password': {
+      'en': 'Failed to change password',
+      'ar': 'تعذّر تغيير كلمة المرور',
+      'ru': 'Не удалось изменить пароль',
+      'de': 'Passwort konnte nicht geändert werden',
+      'ku': 'Guhertina şîfreyê bi ser neket',
+      'tr': 'Parola değiştirilemedi',
+    },
+
+    // ---- Shared failures ----
+    'export_failed': {
+      'en': 'Export failed',
+      'ar': 'فشل التصدير',
+      'ru': 'Не удалось экспортировать',
+      'de': 'Export fehlgeschlagen',
+      'ku': 'Derxistin bi ser neket',
+      'tr': 'Dışa aktarma başarısız',
+    },
+    'import_failed': {
+      'en': 'Import failed',
+      'ar': 'فشل الاستيراد',
+      'ru': 'Не удалось импортировать',
+      'de': 'Import fehlgeschlagen',
+      'ku': 'Anîn bi ser neket',
+      'tr': 'İçe aktarma başarısız',
+    },
+    'failed_to_delete': {
+      'en': 'Failed to delete',
+      'ar': 'تعذّر الحذف',
+      'ru': 'Не удалось удалить',
+      'de': 'Löschen fehlgeschlagen',
+      'ku': 'Jêbirin bi ser neket',
+      'tr': 'Silinemedi',
+    },
+    'failed_save_balance': {
+      'en': 'Failed to save balance',
+      'ar': 'تعذّر حفظ الرصيد',
+      'ru': 'Не удалось сохранить баланс',
+      'de': 'Kontostand konnte nicht gespeichert werden',
+      'ku': 'Tomarkirina hevsengiyê bi ser neket',
+      'tr': 'Bakiye kaydedilemedi',
+    },
+    'error_try_again': {
+      'en': 'An error occurred. Please try again.',
+      'ar': 'حدث خطأ. الرجاء المحاولة مرة أخرى.',
+      'ru': 'Произошла ошибка. Попробуйте ещё раз.',
+      'de': 'Ein Fehler ist aufgetreten. Bitte erneut versuchen.',
+      'ku': 'Çewtiyek çêbû. Ji kerema xwe dîsa biceribîne.',
+      'tr': 'Bir hata oluştu. Lütfen tekrar deneyin.',
+    },
+
+    // ---- Unlock screen ----
+    'enter_your_password': {
+      'en': 'Please enter your password',
+      'ar': 'الرجاء إدخال كلمة المرور',
+      'ru': 'Введите пароль',
+      'de': 'Bitte Passwort eingeben',
+      'ku': 'Ji kerema xwe şîfreya xwe binivîse',
+      'tr': 'Lütfen parolanızı girin',
+    },
+    'biometric_data_corrupted': {
+      'en': 'Biometric data corrupted. Please use your password.',
+      'ar': 'بيانات البصمة تالفة. الرجاء استخدام كلمة المرور.',
+      'ru': 'Биометрические данные повреждены. Используйте пароль.',
+      'de': 'Biometriedaten beschädigt. Bitte Passwort verwenden.',
+      'ku': 'Daneyên biyometrîk xera bûne. Ji kerema xwe şîfreyê bikar bîne.',
+      'tr': 'Biyometrik veriler bozuk. Lütfen parolanızı kullanın.',
+    },
+    'credentials_not_found': {
+      'en': 'Credentials not found. Please reinstall the app.',
+      'ar': 'بيانات الاعتماد غير موجودة. الرجاء إعادة تثبيت التطبيق.',
+      'ru': 'Учётные данные не найдены. Переустановите приложение.',
+      'de': 'Anmeldedaten nicht gefunden. Bitte App neu installieren.',
+      'ku': 'Nasname nehat dîtin. Ji kerema xwe sepanê ji nû ve saz bike.',
+      'tr': 'Kimlik bilgileri bulunamadı. Lütfen uygulamayı yeniden yükleyin.',
+    },
+    'exit_app': {
+      'en': 'Exit App',
+      'ar': 'إغلاق التطبيق',
+      'ru': 'Выйти из приложения',
+      'de': 'App beenden',
+      'ku': 'Ji Sepanê Derkeve',
+      'tr': 'Uygulamadan Çık',
+    },
+    'change_password_from_lock_screen': {
+      'en': 'Change Password',
+      'ar': 'تغيير كلمة المرور',
+      'ru': 'Изменить пароль',
+      'de': 'Passwort ändern',
+      'ku': 'Şîfreyê Biguhere',
+      'tr': 'Parolayı Değiştir',
+    },
+
+    // ---- Create password screen ----
+    'create_password_title': {
+      'en': 'Create Password',
+      'ar': 'إنشاء كلمة مرور',
+      'ru': 'Создать пароль',
+      'de': 'Passwort erstellen',
+      'ku': 'Şîfreyê Çêke',
+      'tr': 'Parola Oluştur',
+    },
+    'create_password_warning': {
+      'en': 'This password encrypts your data.\nIt cannot be recovered if forgotten.',
+      'ar': 'هذه كلمة المرور تشفّر بياناتك.\nلا يمكن استردادها إذا نُسيت.',
+      'ru': 'Этот пароль шифрует ваши данные.\nЕго нельзя восстановить, если забыть.',
+      'de': 'Dieses Passwort verschlüsselt Ihre Daten.\nEs kann nicht wiederhergestellt werden.',
+      'ku': 'Ev şîfre daneyên te şîfre dike.\nHeke were jibîrkirin nayê vegerandin.',
+      'tr': 'Bu parola verilerinizi şifreler.\nUnutulursa kurtarılamaz.',
+    },
+    'min_6_characters': {
+      'en': 'Minimum 6 characters',
+      'ar': '٦ محارف على الأقل',
+      'ru': 'Минимум 6 символов',
+      'de': 'Mindestens 6 Zeichen',
+      'ku': 'Herî kêm 6 tîp',
+      'tr': 'En az 6 karakter',
+    },
+    'create_and_enter': {
+      'en': 'Create & Enter',
+      'ar': 'إنشاء ودخول',
+      'ru': 'Создать и войти',
+      'de': 'Erstellen & Öffnen',
+      'ku': 'Çêke û Têkeve',
+      'tr': 'Oluştur ve Gir',
+    },
+
+    // ---- Encryption choice ----
+    'encryption_choice_title': {
+      'en': 'Protect your data',
+      'ar': 'احمِ بياناتك',
+      'ru': 'Защитите свои данные',
+      'de': 'Schützen Sie Ihre Daten',
+      'ku': 'Daneyên xwe biparêze',
+      'tr': 'Verilerinizi koruyun',
+    },
+    'encryption_choice_description': {
+      'en':
+          'Do you want your financial data encrypted and protected with a '
+          'password?',
+      'ar': 'هل تريد تشفير بياناتك المالية وحمايتها بكلمة مرور؟',
+      'ru': 'Хотите ли вы зашифровать свои финансовые данные и защитить их '
+          'паролем?',
+      'de':
+          'Möchten Sie Ihre Finanzdaten verschlüsseln und mit einem Passwort '
+          'schützen?',
+      'ku':
+          'Ma dixwazî daneyên darayî yên xwe şîfre bikî û bi şîfreyekê biparêzî?',
+      'tr': 'Finansal verilerinizin parola ile şifrelenmesini ister misiniz?',
+    },
+    'encryption_choice_on_body': {
+      'en':
+          'With encryption: your data is encrypted on your device and the app '
+          'requires your password (or fingerprint) to open.',
+      'ar': 'مع التشفير: يتم تشفير بياناتك على جهازك وتتطلب التطبيق كلمة مرورك '
+          '(أو بصمتك) لفتحه.',
+      'ru': 'С шифрованием: данные шифруются на устройстве, а для открытия '
+          'приложения нужен ваш пароль (или отпечаток пальца).',
+      'de':
+          'Mit Verschlüsselung: Ihre Daten werden auf Ihrem Gerät verschlüsselt '
+          'und die App verlangt Ihr Passwort (oder Ihren Fingerabdruck) zum '
+          'Öffnen.',
+      'ku':
+          'Bi şîfrekirinê: daneyên te li ser cîhaza te tê şîfrekirin û app '
+          'şîfreya te (an jî şopa tîlê) ji bo vekirinê dixwazе.',
+      'tr':
+          'Şifreleme ile: verileriniz cihazınızda şifrelenir ve uygulama '
+          'açılmak için parolanızı (veya parmak izinizi) ister.',
+    },
+    'encryption_choice_off_body': {
+      'en':
+          'Without encryption: no password is required and your data is stored '
+          'openly on your device. Choose this if you prefer speed and '
+          'convenience.',
+      'ar': 'بدون تشفير: لا حاجة لكلمة مرور وتُخزَّن بياناتك مفتوحة على جهازك. '
+          'اختر هذا إذا كنت تفضّل السرعة والراحة.',
+      'ru': 'Без шифрования: пароль не требуется, а данные хранятся открыто. '
+          'Выберите это, если предпочитаете скорость и удобство.',
+      'de': 'Ohne Verschlüsselung: kein Passwort nötig, Daten werden offen '
+          'gespeichert. Wählen Sie dies bei Bequemlichkeit.',
+      'ku': 'Bê şîfre: şîfre pêwîst nîne û daneyên te vekirî dibin. Vê hilbijère '
+          'eger tu pêl rehetîyê bikî.',
+      'tr': 'Şifrelemesiz: parola gerekmez ve verileriniz cihazınızda açık '
+          'saklanır. Hız ve rahatlık istiyorsanız bunu seçin.',
+    },
+    'encryption_choice_enable': {
+      'en': 'Enable Encryption',
+      'ar': 'تفعيل التشفير',
+      'ru': 'Включить шифрование',
+      'de': 'Verschlüsselung aktivieren',
+      'ku': 'Şîfrekeriê pêde bike',
+      'tr': 'Şifrelemeyi Etkinleştir',
+    },
+    'encryption_choice_skip': {
+      'en': 'No, Continue Without',
+      'ar': 'لا، متابعة بدون',
+      'ru': 'Нет, продолжить без',
+      'de': 'Nein, ohne weiter',
+      'ku': 'Na, Bêy Wê Bidomîne',
+      'tr': 'Hayır, Olmadan Devam Et',
+    },
+    'enable_encryption_now_title': {
+      'en': 'Enable Encryption',
+      'ar': 'تفعيل التشفير',
+      'ru': 'Включить шифрование',
+      'de': 'Verschlüsselung aktivieren',
+      'ku': 'Şîfrekeriyê Çalak Bike',
+      'tr': 'Şifrelemeyi Etkinleştir',
+    },
+    'enable_encryption_now_subtitle': {
+      'en': 'Protect your data with a password',
+      'ar': 'احمِ بياناتك بكلمة مرور',
+      'ru': 'Защитите данные паролем',
+      'de': 'Daten mit einem Passwort schützen',
+      'ku': 'Daneyên xwe bi şîfreyekê biparêze',
+      'tr': 'Verilerinizi parolayla koruyun',
+    },
+    'enabling_encryption': {
+      'en': 'Enabling encryption...',
+      'ar': 'جاري تفعيل التشفير...',
+      'ru': 'Включение шифрования...',
+      'de': 'Verschlüsselung wird aktiviert...',
+      'ku': 'Şîfrekerî tê çalakkirin...',
+      'tr': 'Şifreleme etkinleştiriliyor...',
+    },
+    'encryption_enabled_success': {
+      'en': 'Encryption enabled successfully',
+      'ar': 'تم تفعيل التشفير بنجاح',
+      'ru': 'Шифрование успешно включено',
+      'de': 'Verschlüsselung erfolgreich aktiviert',
+      'ku': 'Şîfrekerî bi serkeftî hate çalakkirin',
+      'tr': 'Şifreleme başarıyla etkinleştirildi',
+    },
+
+    // ---- Biometric enrollment (after password creation) ----
+    'enable_biometric_title': {
+      'en': 'Add fingerprint unlock',
+      'ar': 'إضافة فتح البصمة',
+      'ru': 'Добавить вход по отпечатку',
+      'de': 'Fingerabdruck-Freischaltung hinzufügen',
+      'ku': 'Vekirina şopa tîlê zêde bike',
+      'tr': 'Parmak izi ile açmayı ekle',
+    },
+    'enable_biometric_explanation': {
+      'en':
+          'We will now enable your fingerprint so you can open the app '
+          'quickly without typing your password.',
+      'ar': 'سنقوم الآن بتفعيل بصمتك لتتمكن من فتح التطبيق بسرعة دون كتابة كلمة '
+          'المرور.',
+      'ru': 'Теперь включим ваш отпечаток пальца, чтобы вы могли открывать '
+          'приложение быстро, без ввода пароля.',
+      'de':
+          'Wir aktivieren jetzt Ihren Fingerabdruck, damit Sie die App schnell '
+          'ohne Passwort öffnen können.',
+      'ku':
+          'Em ê niha şopa tîlê te çalak bikin da ku tu bikarî app bê şîfre '
+          'zû vekî.',
+      'tr': 'Şimdi parmağınızı etkinleştireceğiz, böylece parolanızı yazmadan '
+          'uygulamayı hızlıca açabilirsiniz.',
+    },
+    'enable_biometric_ok': {
+      'en': 'Enable',
+      'ar': 'تفعيل',
+      'ru': 'Включить',
+      'de': 'Aktivieren',
+      'ku': 'Çalak bike',
+      'tr': 'Etkinleştir',
+    },
+
+    // ---- EULA ----
+    'terms_of_use': {
+      'en': 'Terms of Use',
+      'ar': 'شروط الاستخدام',
+      'ru': 'Условия использования',
+      'de': 'Nutzungsbedingungen',
+      'ku': 'Mercên Bikaranînê',
+      'tr': 'Kullanım Koşulları',
+    },
+    'eula_intro': {
+      'en':
+          'Welcome to Finance me Local. Before you begin, please read and '
+          'accept our Terms of Use:',
+      'ar':
+          'مرحباً بك في Finance me Local. قبل أن تبدأ، الرجاء قراءة شروط '
+          'الاستخدام والموافقة عليها:',
+      'ru':
+          'Добро пожаловать в Finance me Local. Прежде чем начать, прочитайте '
+          'и примите наши условия использования:',
+      'de':
+          'Willkommen bei Finance me Local. Bevor Sie beginnen, lesen und '
+          'akzeptieren Sie bitte unsere Nutzungsbedingungen:',
+      'ku':
+          'Bi xêr hatî Finance me Local. Berî ku dest pê bikî, ji kerema xwe '
+          'mercên bikaranînê bixwîne û bipejirîne:',
+      'tr':
+          'Finance me Local\'e hoş geldiniz. Başlamadan önce lütfen Kullanım '
+          'Koşullarımızı okuyup kabul edin:',
+    },
+    'eula_local_title': {
+      'en': '100% Local & Private',
+      'ar': 'محلي وخاص ١٠٠٪',
+      'ru': '100% локально и конфиденциально',
+      'de': '100 % lokal & privat',
+      'ku': '100% Herêmî û Taybet',
+      'tr': '%100 Yerel ve Gizli',
+    },
+    'eula_local_body': {
+      'en':
+          'This app operates entirely offline. Your data is encrypted and '
+          'stored exclusively on your device. We do not collect, track, or '
+          'have access to any of your information.',
+      'ar':
+          'يعمل هذا التطبيق دون اتصال بالكامل. بياناتك مشفّرة ومخزّنة على '
+          'جهازك حصراً. نحن لا نجمع أو نتتبّع أو نصل إلى أي من معلوماتك.',
+      'ru':
+          'Приложение работает полностью офлайн. Ваши данные зашифрованы и '
+          'хранятся только на вашем устройстве. Мы не собираем, не отслеживаем '
+          'и не имеем доступа к вашей информации.',
+      'de':
+          'Diese App funktioniert vollständig offline. Ihre Daten sind '
+          'verschlüsselt und ausschließlich auf Ihrem Gerät gespeichert. Wir '
+          'sammeln, verfolgen und sehen keine Ihrer Informationen.',
+      'ku':
+          'Ev sepan bi tevahî bêyî înternetê dixebite. Daneyên te şîfrekirî ne '
+          'û tenê li ser cîhaza te têne hilanîn. Em tu agahiyên te kom nakin, '
+          'naşopînin û nagihîjinê.',
+      'tr':
+          'Bu uygulama tamamen çevrimdışı çalışır. Verileriniz şifrelenir ve '
+          'yalnızca cihazınızda saklanır. Bilgilerinizi toplamayız, izlemeyiz '
+          've onlara erişemeyiz.',
+    },
+    'eula_advisor_title': {
+      'en': 'A Personal Tool, Not an Advisor',
+      'ar': 'أداة شخصية، لا مستشار مالي',
+      'ru': 'Личный инструмент, а не советник',
+      'de': 'Ein persönliches Werkzeug, kein Berater',
+      'ku': 'Amûrek Kesane, Ne Şêwirmend',
+      'tr': 'Kişisel Bir Araç, Danışman Değil',
+    },
+    'eula_advisor_body': {
+      'en':
+          'This application is strictly a personal financial diary and '
+          'calculator. It does not provide financial advice. You are your own '
+          'financial manager.',
+      'ar':
+          'هذا التطبيق هو دفتر يوميات مالي وآلة حاسبة شخصية فقط. لا يقدّم أي '
+          'استشارة مالية. أنت مدير أموالك.',
+      'ru':
+          'Это приложение — исключительно личный финансовый дневник и '
+          'калькулятор. Оно не даёт финансовых советов. Вы сами управляете '
+          'своими финансами.',
+      'de':
+          'Diese Anwendung ist ausschließlich ein persönliches Finanztagebuch '
+          'und ein Rechner. Sie bietet keine Finanzberatung. Sie sind Ihr '
+          'eigener Finanzmanager.',
+      'ku':
+          'Ev sepan tenê rojnivîskek darayî ya kesane û jimêrek e. Şêwira '
+          'darayî nade. Tu rêveberê darayî yê xwe yî.',
+      'tr':
+          'Bu uygulama yalnızca kişisel bir finansal günlük ve hesap '
+          'makinesidir. Finansal tavsiye vermez. Kendi finans yöneticinizsiniz.',
+    },
+    'eula_liability_title': {
+      'en': 'Zero Liability',
+      'ar': 'إخلاء المسؤولية',
+      'ru': 'Нулевая ответственность',
+      'de': 'Keine Haftung',
+      'ku': 'Bê Berpirsiyarî',
+      'tr': 'Sıfır Sorumluluk',
+    },
+    'eula_liability_body': {
+      'en':
+          'The developer is strictly not liable for any data loss, forgotten '
+          'backup passwords, device compromise, or any financial decisions '
+          'made using this app.',
+      'ar':
+          'المطوّر غير مسؤول إطلاقاً عن أي فقدان للبيانات أو نسيان كلمات مرور '
+          'النسخ الاحتياطي أو اختراق الجهاز أو أي قرارات مالية تُتخذ باستخدام '
+          'هذا التطبيق.',
+      'ru':
+          'Разработчик не несёт никакой ответственности за потерю данных, '
+          'забытые пароли резервных копий, компрометацию устройства или любые '
+          'финансовые решения, принятые с помощью этого приложения.',
+      'de':
+          'Der Entwickler haftet ausdrücklich nicht für Datenverlust, '
+          'vergessene Backup-Passwörter, Gerätekompromittierung oder '
+          'Finanzentscheidungen, die mit dieser App getroffen werden.',
+      'ku':
+          'Pêşdebir bi tu awayî berpirsiyar nîne ji windakirina daneyan, '
+          'şîfreyên paşekêşê yên jibîrkirî, xerabûna cîhazê, an biryarên '
+          'darayî yên bi vê sepanê têne girtin.',
+      'tr':
+          'Geliştirici; veri kaybından, unutulan yedek parolalarından, cihaz '
+          'ihlalinden veya bu uygulamayla alınan finansal kararlardan kesinlikle '
+          'sorumlu değildir.',
+    },
+    'eula_responsibility_title': {
+      'en': 'Your Responsibility',
+      'ar': 'مسؤوليتك',
+      'ru': 'Ваша ответственность',
+      'de': 'Ihre Verantwortung',
+      'ku': 'Berpirsiyariya Te',
+      'tr': 'Sizin Sorumluluğunuz',
+    },
+    'eula_responsibility_body': {
+      'en':
+          'You are solely responsible for keeping your biometric locks secure '
+          'and safely storing your encrypted backup files (.vault) and their '
+          'passwords.',
+      'ar':
+          'أنت وحدك المسؤول عن تأمين أقفالك البيومترية وحفظ ملفات النسخ '
+          'الاحتياطي المشفّرة (.vault) وكلمات مرورها بأمان.',
+      'ru':
+          'Вы несёте единоличную ответственность за безопасность биометрических '
+          'блокировок и надёжное хранение зашифрованных резервных копий '
+          '(.vault) и паролей к ним.',
+      'de':
+          'Sie allein sind dafür verantwortlich, Ihre biometrischen Sperren zu '
+          'sichern und Ihre verschlüsselten Backup-Dateien (.vault) sowie deren '
+          'Passwörter sicher aufzubewahren.',
+      'ku':
+          'Tenê tu berpirsiyar î ji parastina kilîtên biyometrîk û hilanîna '
+          'ewle ya pelên paşekêşa şîfrekirî (.vault) û şîfreyên wan.',
+      'tr':
+          'Biyometrik kilitlerinizi güvende tutmaktan ve şifreli yedek '
+          'dosyalarınızı (.vault) ve parolalarını güvenle saklamaktan yalnızca '
+          'siz sorumlusunuz.',
+    },
+    'i_agree': {
+      'en': 'I Agree',
+      'ar': 'أوافق',
+      'ru': 'Я согласен',
+      'de': 'Ich stimme zu',
+      'ku': 'Ez Dipejirînim',
+      'tr': 'Kabul Ediyorum',
+    },
+    'decline': {
+      'en': 'Decline',
+      'ar': 'رفض',
+      'ru': 'Отклонить',
+      'de': 'Ablehnen',
+      'ku': 'Red Bike',
+      'tr': 'Reddet',
+    },
+
+    // ---- Analytics ----
+    // Replaces `chart_weekly_title`: the chart no longer always shows a week —
+    // it shows whatever the period navigator is set to. The old key is left in
+    // place rather than deleted; an orphan value costs nothing.
+    'chart_activity_title': {
+      'en': 'Activity',
+      'ar': 'النشاط',
+      'ru': 'Активность',
+      'de': 'Aktivität',
+      'ku': 'Çalakî',
+      'tr': 'Hareketler',
+    },
+
+    // ---- Period navigation ----
+    'all_time': {
+      'en': 'All time',
+      'ar': 'كل الفترات',
+      'ru': 'За всё время',
+      'de': 'Gesamter Zeitraum',
+      'ku': 'Hemû dem',
+      'tr': 'Tüm zamanlar',
+    },
+    'tap_for_all_time': {
+      'en': 'Tap for all time',
+      'ar': 'اضغط لكل الفترات',
+      'ru': 'Нажмите: за всё время',
+      'de': 'Tippen für gesamten Zeitraum',
+      'ku': 'Ji bo hemû demê bitikîne',
+      'tr': 'Tüm zamanlar için dokunun',
+    },
+    'tap_for_this_month': {
+      'en': 'Tap for this month',
+      'ar': 'اضغط لهذا الشهر',
+      'ru': 'Нажмите: этот месяц',
+      'de': 'Tippen für diesen Monat',
+      'ku': 'Ji bo vê mehê bitikîne',
+      'tr': 'Bu ay için dokunun',
+    },
+    'previous_month': {
+      'en': 'Previous month',
+      'ar': 'الشهر السابق',
+      'ru': 'Предыдущий месяц',
+      'de': 'Vorheriger Monat',
+      'ku': 'Meha berê',
+      'tr': 'Önceki ay',
+    },
+    'next_month': {
+      'en': 'Next month',
+      'ar': 'الشهر التالي',
+      'ru': 'Следующий месяц',
+      'de': 'Nächster Monat',
+      'ku': 'Meha bê',
+      'tr': 'Sonraki ay',
+    },
+    'overview': {
+      'en': 'Overview',
+      'ar': 'نظرة عامة',
+      'ru': 'Обзор',
+      'de': 'Übersicht',
+      'ku': 'Nêrîna Giştî',
+      'tr': 'Genel Bakış',
+    },
+    'edit_balance_tooltip': {
+      'en': 'Edit balance',
+      'ar': 'تعديل الرصيد',
+      'ru': 'Изменить баланс',
+      'de': 'Kontostand bearbeiten',
+      'ku': 'Hevsengiyê biguherîne',
+      'tr': 'Bakiyeyi düzenle',
+    },
+    'no_transactions_in_period': {
+      'en': 'Nothing recorded in this period',
+      'ar': 'لا شيء مسجّل في هذه الفترة',
+      'ru': 'За этот период ничего нет',
+      'de': 'In diesem Zeitraum nichts erfasst',
+      'ku': 'Di vê demê de tiştek nehatiye tomarkirin',
+      'tr': 'Bu dönemde kayıt yok',
+    },
+    'try_another_month': {
+      'en': 'Try another month, or add a transaction',
+      'ar': 'جرّب شهراً آخر، أو أضف معاملة',
+      'ru': 'Выберите другой месяц или добавьте транзакцию',
+      'de': 'Anderen Monat wählen oder Transaktion hinzufügen',
+      'ku': 'Meheke din biceribîne, an danûstandinekê zêde bike',
+      'tr': 'Başka bir ay deneyin veya işlem ekleyin',
+    },
+
+    // ---- Recurring row subtitle ----
+    'recurring_due_line': {
+      'en': 'Next: {date}  •  {cycle}',
+      'ar': 'التالي: {date}  •  {cycle}',
+      'ru': 'След.: {date}  •  {cycle}',
+      'de': 'Nächste: {date}  •  {cycle}',
+      'ku': 'Pêşî: {date}  •  {cycle}',
+      'tr': 'Sonraki: {date}  •  {cycle}',
+    },
+
+    // ---- Backup result messages ----
+    // Whole sentences with named slots, not fragments joined at the call site:
+    // "Imported 12 records" reorders in Arabic, Russian and Turkish, so the
+    // old `t('imported') + count + t('imported_records')` could not be
+    // translated correctly no matter how many keys existed.
+    'backup_saved_at': {
+      'en': 'Backup saved to {path}',
+      'ar': 'حُفظت النسخة الاحتياطية في {path}',
+      'ru': 'Резервная копия сохранена в {path}',
+      'de': 'Backup gespeichert unter {path}',
+      'ku': 'Paşekêş li {path} hate tomarkirin',
+      'tr': 'Yedek {path} konumuna kaydedildi',
+    },
+    'imported_count': {
+      'en': 'Imported {count} records',
+      'ar': 'تم استيراد {count} سجلاً',
+      'ru': 'Импортировано записей: {count}',
+      'de': '{count} Datensätze importiert',
+      'ku': '{count} tomar hatin anîn',
+      'tr': '{count} kayıt içe aktarıldı',
+    },
+
+    // ---- Notifications ----
+    'notif_payment_title': {
+      'en': 'Upcoming Payment',
+      'ar': 'دفعة قادمة',
+      'ru': 'Предстоящий платёж',
+      'de': 'Anstehende Zahlung',
+      'ku': 'Dayîna Bê',
+      'tr': 'Yaklaşan Ödeme',
+    },
+    'notif_payment_body': {
+      'en': '{name} — {amount} is due tomorrow',
+      'ar': '{name} — {amount} مستحقة غداً',
+      'ru': '{name} — {amount} к оплате завтра',
+      'de': '{name} — {amount} ist morgen fällig',
+      'ku': '{name} — {amount} sibê tê xwestin',
+      'tr': '{name} — {amount} yarın ödenecek',
+    },
   };
 
   static String get(String key, String languageCode) {
     final entry = _translations[key];
     if (entry == null) return key;
     return entry[languageCode] ?? entry['en'] ?? key;
+  }
+
+  /// Like [get], but substitutes `{placeholder}` tokens from [params].
+  ///
+  /// Exists because string concatenation is not translatable: word order
+  /// differs in Arabic, Russian, German and Turkish, so a sentence assembled
+  /// from fragments at the call site cannot be rendered correctly in those
+  /// languages no matter how many keys are added. A single key holding the
+  /// whole sentence, with named slots, is the only form that survives
+  /// translation.
+  ///
+  /// Unknown placeholders are left untouched rather than blanked, so a typo is
+  /// visible on screen instead of silently deleting text.
+  static String format(
+    String key,
+    String languageCode,
+    Map<String, String> params,
+  ) {
+    var result = get(key, languageCode);
+    params.forEach((name, value) {
+      result = result.replaceAll('{$name}', value);
+    });
+    return result;
   }
 }

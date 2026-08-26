@@ -1,3 +1,13 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'package:hive_ce/hive.dart';
 import 'subscription_model.dart';
 
@@ -24,13 +34,17 @@ class SubscriptionModelAdapter extends TypeAdapter<SubscriptionModel> {
     billingCycle = reader.readString();
     enableNotification = reader.readBool();
 
-    if (reader.availableBytes > 0) id = reader.readString();
-    if (reader.availableBytes > 0) type = reader.readString();
-    if (reader.availableBytes > 0) startDate = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
-    if (reader.availableBytes > 0) isPaused = reader.readBool();
-    if (reader.availableBytes > 0) createdAt = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
+    try {
+      if (reader.availableBytes > 0) id = reader.readString();
+      if (reader.availableBytes > 0) type = reader.readString();
+      if (reader.availableBytes > 0) startDate = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
+      if (reader.availableBytes > 0) isPaused = reader.readBool();
+      if (reader.availableBytes > 0) createdAt = DateTime.fromMillisecondsSinceEpoch(reader.readInt());
+    } catch (_) {
+      // Ignore partial/legacy trailing fields; defaults above apply.
+    }
 
-    return SubscriptionModel(
+    final model = SubscriptionModel(
       name: title,
       amount: amount,
       type: type,
@@ -39,9 +53,14 @@ class SubscriptionModelAdapter extends TypeAdapter<SubscriptionModel> {
       nextDueDate: nextBillingDate,
       isPaused: isPaused,
       notifyDayBefore: enableNotification,
-      id: id.isEmpty ? DateTime.now().microsecondsSinceEpoch.toString() : id,
+      id: id,
       createdAt: createdAt,
     );
+    if (model.id.isEmpty) {
+      model.id = DateTime.now().microsecondsSinceEpoch.toString();
+      model.idWasRegenerated = true;
+    }
+    return model;
   }
 
   @override

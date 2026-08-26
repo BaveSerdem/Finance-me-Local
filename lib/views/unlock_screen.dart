@@ -1,12 +1,12 @@
-/*
- * ============================================================================
- * Project: Finance me Local
- * Author: BaveSerdem
- * Copyright (c) 2026.
- *
- * LICENSE: Personal Non-Commercial Use Only
- * ============================================================================
- */
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -18,17 +18,20 @@ import '../services/key_service.dart';
 import '../services/recurring_service.dart';
 import '../services/secure_storage_service.dart';
 import '../localization/locale_provider.dart';
+import '../providers/theme_provider.dart';
+import '../theme/app_metrics.dart';
+import '../widgets/change_password_flow.dart';
 
-class UnlockScreen extends StatefulWidget {
+class UnlockScreen extends ConsumerStatefulWidget {
   final void Function() onUnlocked;
 
   const UnlockScreen({super.key, required this.onUnlocked});
 
   @override
-  State<UnlockScreen> createState() => _UnlockScreenState();
+  ConsumerState<UnlockScreen> createState() => _UnlockScreenState();
 }
 
-class _UnlockScreenState extends State<UnlockScreen>
+class _UnlockScreenState extends ConsumerState<UnlockScreen>
     with SingleTickerProviderStateMixin {
   final _passwordController = TextEditingController();
   final _keyService = KeyService();
@@ -36,7 +39,13 @@ class _UnlockScreenState extends State<UnlockScreen>
   bool _obscure = true;
   bool _isLoading = false;
   bool _unlockSuccess = false;
-  String? _error;
+
+  /// The *key* of the current error, not its text.
+  ///
+  /// Holding the resolved sentence would freeze it in whatever language was
+  /// active when it was raised; the key is resolved in `build`, so an error
+  /// already on screen follows a language change like everything else.
+  String? _errorKey;
   bool _biometricAvailable = false;
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
@@ -44,9 +53,15 @@ class _UnlockScreenState extends State<UnlockScreen>
   @override
   void initState() {
     super.initState();
+    // The entry fade is the first animation a user meets, and it ran at a fixed
+    // 500ms regardless of the reduce-motion setting — which is exactly the
+    // audience most likely to have that setting on. The status listener below
+    // still fires at zero duration, so the unlock hand-off is unaffected.
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: ref.read(reduceMotionProvider)
+          ? Duration.zero
+          : const Duration(milliseconds: 500),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
@@ -100,7 +115,7 @@ class _UnlockScreenState extends State<UnlockScreen>
 
     setState(() {
       _isLoading = true;
-      _error = null;
+      _errorKey = null;
     });
 
     final storedKey = base64Decode(storedKeyB64);
@@ -110,7 +125,7 @@ class _UnlockScreenState extends State<UnlockScreen>
     );
     if (!_keyService.constantTimeEquals(computedToken, storedToken)) {
       if (mounted) {
-        _setError('Biometric data corrupted. Please use your password.');
+        _setError('biometric_data_corrupted');
       }
       return;
     }
@@ -121,7 +136,7 @@ class _UnlockScreenState extends State<UnlockScreen>
       await RecurringService.processDueItems();
       if (mounted) _onUnlockSuccess();
     } catch (e) {
-      if (mounted) _setError('An error occurred. Please try again.');
+      if (mounted) _setError('error_try_again');
     }
   }
 
@@ -131,7 +146,7 @@ class _UnlockScreenState extends State<UnlockScreen>
     final password = _passwordController.text;
     if (password.isEmpty) {
       setState(() {
-        _error = 'Please enter your password';
+        _errorKey = 'enter_your_password';
       });
       return;
     }
@@ -140,7 +155,7 @@ class _UnlockScreenState extends State<UnlockScreen>
 
     setState(() {
       _isLoading = true;
-      _error = null;
+      _errorKey = null;
     });
 
     if (!mounted) return;
@@ -158,10 +173,14 @@ class _UnlockScreenState extends State<UnlockScreen>
       final storedSaltB64 = await secureStorage.getKdfSalt();
 
       if (storedVerifierB64 == null || storedSaltB64 == null) {
-        _setError('Credentials not found. Please reinstall the app.');
+        _setError('credentials_not_found');
         return;
       }
 
+      // Never let a stale cached key from a previous (possibly wrong) attempt
+      // short-circuit verification. Each unlock attempt must derive fresh from
+      // the password actually typed.
+      _keyService.clearCache();
       final salt = base64Decode(storedSaltB64);
       final derivedKey = await _keyService.deriveKey(password, salt);
 
@@ -170,7 +189,7 @@ class _UnlockScreenState extends State<UnlockScreen>
       final storedVerifier = base64Decode(storedVerifierB64);
 
       if (!_keyService.constantTimeEquals(candidate, storedVerifier)) {
-        _setError('Incorrect password');
+        _setError('incorrect_password');
         return;
       }
 
@@ -191,15 +210,15 @@ class _UnlockScreenState extends State<UnlockScreen>
     } catch (e) {
       if (!mounted) return;
 
-      _setError('An error occurred. Please try again.');
+      _setError('error_try_again');
       _passwordController.clear();
       _focusNode.requestFocus();
     }
   }
 
-  void _setError(String message) {
+  void _setError(String key) {
     setState(() {
-      _error = message;
+      _errorKey = key;
       _isLoading = false;
     });
   }
@@ -221,7 +240,7 @@ class _UnlockScreenState extends State<UnlockScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final t = ProviderScope.containerOf(context).read(stringsProvider);
+    final t = ref.watch(stringsProvider);
 
     return Scaffold(
       body: Container(
@@ -276,7 +295,7 @@ class _UnlockScreenState extends State<UnlockScreen>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Welcome back',
+                      t('welcome_back'),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.primary,
@@ -292,7 +311,7 @@ class _UnlockScreenState extends State<UnlockScreen>
                       enabled: !_isLoading && !_unlockSuccess,
                       onSubmitted: (_) => _unlock(),
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: t('password'),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -330,21 +349,27 @@ class _UnlockScreenState extends State<UnlockScreen>
                     const SizedBox(height: 16),
                     // ── Error ─────────────────────────────────────────
                     AnimatedSize(
-                      duration: const Duration(milliseconds: 250),
+                      duration: ref.watch(reduceMotionProvider)
+                          ? Duration.zero
+                          : const Duration(milliseconds: AppMotion.base),
                       curve: Curves.easeInOut,
                       alignment: Alignment.topCenter,
-                      child: _error != null
+                      child: _errorKey != null
                           ? Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpace.sm,
+                              ),
                               child: Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                                  horizontal: AppSpace.lg,
+                                  vertical: AppSpace.md,
                                 ),
                                 decoration: BoxDecoration(
                                   color: colorScheme.errorContainer,
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.md,
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
@@ -356,7 +381,7 @@ class _UnlockScreenState extends State<UnlockScreen>
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        _error!,
+                                        t(_errorKey!),
                                         style: TextStyle(
                                           color:
                                               colorScheme.onErrorContainer,
@@ -393,7 +418,7 @@ class _UnlockScreenState extends State<UnlockScreen>
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('Unlock'),
+                                  : Text(t('unlock')),
                         ),
                       ),
                     ),
@@ -408,10 +433,24 @@ class _UnlockScreenState extends State<UnlockScreen>
                       ),
                     ],
                     const SizedBox(height: 20),
+                    // ── Change password (encrypted mode only) ────────
+                    if (DatabaseService().getEncryptionChoice() == true) ...[
+                      TextButton(
+                        onPressed: () async {
+                          await showChangePasswordFlow(
+                            context,
+                            ref,
+                            boxesAlreadyOpen: false,
+                          );
+                          if (mounted) _passwordController.clear();
+                        },
+                        child: Text(t('change_password_from_lock_screen')),
+                      ),
+                    ],
                     // ── Exit ──────────────────────────────────────────
                     TextButton(
                       onPressed: () => SystemNavigator.pop(),
-                      child: const Text('Exit App'),
+                      child: Text(t('exit_app')),
                     ),
                     const SizedBox(height: 12),
                   ],

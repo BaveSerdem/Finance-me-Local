@@ -1,3 +1,13 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'package:hive_ce/hive.dart';
 
 @HiveType(typeId: 1)
@@ -45,6 +55,15 @@ class SubscriptionModel extends HiveObject {
 
   @HiveField(9)
   late DateTime createdAt;
+
+  /// Transient — never written to Hive.
+  ///
+  /// Set by [SubscriptionModelAdapter] when a legacy record had no stored `id`
+  /// (so one was freshly generated). Lets `DatabaseService.openBoxes()` persist
+  /// that generated id exactly once, after which every later read finds the
+  /// stored id and never regenerates it — keeping `cancelNotification(sub.id)`
+  /// stable for records that predate the field.
+  bool idWasRegenerated = false;
 
   String get title => name;
   set title(String v) => name = v;

@@ -1,3 +1,13 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:encrypt/encrypt.dart' as enc;
@@ -6,6 +16,7 @@ import 'package:file_picker/file_picker.dart';
 import '../models/transaction_model.dart';
 import '../models/subscription_model.dart';
 import 'database_service.dart';
+import 'notification_service.dart';
 
 /// Handles AES-256 encrypted local backup export and import.
 class BackupService {
@@ -67,14 +78,14 @@ class BackupService {
       );
 
       if (result == null || result.files.isEmpty) {
-        throw BackupCorruptionException('Import cancelled by user.');
+        throw const BackupCorruptionException('Import cancelled by user.');
       }
 
       fileBytes = result.files.first.bytes;
     }
 
     if (fileBytes == null || fileBytes.length < 33) {
-      throw BackupCorruptionException('Invalid or corrupted backup file.');
+      throw const BackupCorruptionException('Invalid or corrupted backup file.');
     }
 
     final salt = Uint8List.sublistView(fileBytes, 0, 16);
@@ -88,7 +99,7 @@ class BackupService {
     try {
       json = encrypter.decrypt(ciphertext, iv: iv);
     } catch (_) {
-      throw BackupDecryptionException('Wrong password.');
+      throw const BackupDecryptionException('Wrong password.');
     }
 
     try {
@@ -105,21 +116,46 @@ class BackupService {
       final db = DatabaseService();
       int count = 0;
 
+      // Dedup keys for records already present in the target boxes, so an
+      // import (or restore) never duplicates existing entries.
+      final txKeys = db.transactionsBox.values
+          .map(_transactionKey)
+          .toSet();
+      final existingSubIds = db.subscriptionsBox.values
+          .where((s) => s.id.isNotEmpty)
+          .map((s) => s.id)
+          .toSet();
+
       for (final tJson in transactionsList) {
         final t = _transactionFromJson(tJson);
+        if (txKeys.contains(_transactionKey(t))) continue;
         await db.transactionsBox.add(t);
+        txKeys.add(_transactionKey(t));
         count++;
       }
 
       for (final sJson in subscriptionsList) {
         final s = _subscriptionFromJson(sJson);
+        if (s.id.isNotEmpty && existingSubIds.contains(s.id)) continue;
         await db.subscriptionsBox.add(s);
+        existingSubIds.add(s.id);
         count++;
+
+        // A restored subscription should resume its reminders. The backup format
+        // preserves `isPaused`, so only schedule it when it wasn't paused and
+        // notifications are enabled for it.
+        if (!s.isPaused && s.enableNotification) {
+          try {
+            await NotificationService().scheduleNotification(s);
+          } catch (_) {
+            // Never fail the whole import because one reminder failed to plan.
+          }
+        }
       }
 
       return count;
     } on FormatException {
-      throw BackupCorruptionException('Corrupted backup data.');
+      throw const BackupCorruptionException('Corrupted backup data.');
     }
   }
 
@@ -153,6 +189,17 @@ class BackupService {
     'isRecurring': t.isRecurring,
   };
 
+  /// A stable identity for deduplicating transactions across imports.
+  ///
+  /// Title + amount + date is the natural key for a hand-entered expense: two
+  /// imports of the same backup must collapse to one entry, while a genuinely
+  /// repeated purchase (same amount, same day) would share the key regardless
+  /// of whether it originated locally or from a restore.
+  String _transactionKey(TransactionModel t) {
+    final d = t.date;
+    return '${t.title}|${t.amount}|${d.year}-${d.month}-${d.day}';
+  }
+
   TransactionModel _transactionFromJson(Map<String, dynamic> json) {
     final t = TransactionModel(
       title: json['title'] as String,
@@ -175,6 +222,11 @@ class BackupService {
     'startDate': s.startDate.toIso8601String(),
     'id': s.id,
     'createdAt': s.createdAt.toIso8601String(),
+    // Was omitted entirely. Restoring a backup therefore un-paused every paused
+    // subscription, and because each still carried its stale next-due date, the
+    // catch-up loop then generated one transaction per elapsed cycle — a paused
+    // monthly item could produce two years of charges that never happened.
+    'isPaused': s.isPaused,
   };
 
   SubscriptionModel _subscriptionFromJson(Map<String, dynamic> json) =>
@@ -187,7 +239,11 @@ class BackupService {
             ? DateTime.parse(json['startDate'] as String)
             : DateTime.parse(json['nextBillingDate'] as String),
         nextDueDate: DateTime.parse(json['nextBillingDate'] as String),
-        notifyDayBefore: json['enableNotification'] as bool? ?? false,
+        // Defaults to `true`, matching the model and the Hive adapter. The
+        // importer alone used to default it to `false`, so any backup predating
+        // the key restored with every reminder silently switched off.
+        notifyDayBefore: json['enableNotification'] as bool? ?? true,
+        isPaused: json['isPaused'] as bool? ?? false,
         id: json['id'] as String?,
         createdAt: json['createdAt'] != null
             ? DateTime.parse(json['createdAt'] as String)

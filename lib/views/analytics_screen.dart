@@ -1,283 +1,194 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/transaction_model.dart';
-import '../providers/theme_provider.dart';
-import '../providers/transaction_provider.dart';
-import '../providers/currency_provider.dart';
+
+import '../formatting/money_format.dart';
 import '../localization/locale_provider.dart';
+import '../providers/analytics_provider.dart';
+import '../providers/format_provider.dart';
+import '../providers/theme_provider.dart';
+import '../theme/app_icons.dart';
+import '../theme/app_metrics.dart';
+import '../theme/app_palette.dart';
+import '../widgets/app_card.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/money_text.dart';
+import 'home/month_navigator.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactions = ref.watch(transactionProvider);
-    final settings = ref.watch(themeProvider);
     final t = ref.watch(stringsProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    final reduceAnimations = settings.reduceAnimations;
-    final symbol = currencySymbols[ref.watch(currencyProvider)] ?? '\$';
+    final data = ref.watch(analyticsProvider);
+    final reduceAnimations = ref.watch(reduceMotionProvider);
+    final money = ref.watch(moneyFormatProvider);
+    final palette = context.palette;
 
-    final weeklyData = _computeWeeklyData(transactions);
-    final totalIncome = transactions
-        .where((t) => !t.isExpense)
-        .fold<double>(0, (sum, t) => sum + t.amount);
-    final totalExpenses = transactions
-        .where((t) => t.isExpense)
-        .fold<double>(0, (sum, t) => sum + t.amount);
-    final incomeCount =
-        transactions.where((t) => !t.isExpense).length;
-    final expenseCount =
-        transactions.where((t) => t.isExpense).length;
-
-    if (transactions.length < 2) {
-      return _EmptyAnalytics(
-        colorScheme: colorScheme,
-        message: t('not_enough_data'),
-        hint: t('add_transactions_for_analytics'),
-      );
-    }
-
-    final incomeColor = colorScheme.primary;
-    final expenseColor = colorScheme.error;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _ChartCard(
-            title: t('chart_weekly_title'),
-            colorScheme: colorScheme,
-            child: SizedBox(
-              height: 240,
-              child: _WeeklyBarChart(
-                weeklyData: weeklyData,
-                incomeColor: incomeColor,
-                expenseColor: expenseColor,
-                colorScheme: colorScheme,
-                reduceAnimations: reduceAnimations,
-                incomeTooltip: t('income_tooltip'),
-                expensesTooltip: t('expenses_tooltip'),
-                symbol: symbol,
-              ),
+    return CustomScrollView(
+      key: const PageStorageKey('analytics'),
+      slivers: [
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpace.lg,
+            AppSpace.lg,
+            AppSpace.lg,
+            0,
+          ),
+          // The same navigator the Overview carries, driving the same provider,
+          // so paging to March here and there means the same thing.
+          sliver: SliverToBoxAdapter(child: MonthNavigator()),
+        ),
+        if (data.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            // Was `transactions.length < 2`, so a single transaction showed the
+            // "not enough data" placeholder instead of a chart of itself.
+            child: EmptyState(
+              icon: Icons.insights_outlined,
+              label: t('no_data'),
+              hint: t('add_transactions_to_see'),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpace.lg),
+            sliver: SliverList.list(
+              children: [
+                AppCard(
+                  title: t('chart_activity_title'),
+                  child: SizedBox(
+                    height: 240,
+                    child: _ActivityBarChart(
+                      buckets: data.buckets,
+                      axisMax: niceAxisMax(data.peak),
+                      palette: palette,
+                      reduceAnimations: reduceAnimations,
+                      incomeTooltip: t('income_tooltip'),
+                      expensesTooltip: t('expenses_tooltip'),
+                      money: money,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpace.lg),
+                AppCard(
+                  title: t('chart_distribution_title'),
+                  child: SizedBox(
+                    height: 240,
+                    child: _DistributionPieChart(
+                      totalIncome: data.totalIncome,
+                      totalExpenses: data.totalExpenses,
+                      palette: palette,
+                      reduceAnimations: reduceAnimations,
+                      incomeLabel: t('income_label'),
+                      expensesLabel: t('expenses_label'),
+                      money: money,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpace.lg),
+                _SummaryStats(
+                  net: data.net,
+                  incomeCount: data.incomeCount,
+                  expenseCount: data.expenseCount,
+                  netLabel: t('net_label'),
+                  transactionsLabel: t('transactions_count'),
+                  money: money,
+                ),
+                const SizedBox(height: AppSpace.xxl),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          _ChartCard(
-            title: t('chart_distribution_title'),
-            colorScheme: colorScheme,
-            child: SizedBox(
-              height: 240,
-              child: _DistributionPieChart(
-                totalIncome: totalIncome,
-                totalExpenses: totalExpenses,
-                incomeColor: incomeColor,
-                expenseColor: expenseColor,
-                colorScheme: colorScheme,
-                reduceAnimations: reduceAnimations,
-                incomeLabel: t('income_label'),
-                expensesLabel: t('expenses_label'),
-                symbol: symbol,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _SummaryStats(
-            totalIncome: totalIncome,
-            totalExpenses: totalExpenses,
-            incomeCount: incomeCount,
-            expenseCount: expenseCount,
-            colorScheme: colorScheme,
-            netLabel: t('net_label'),
-            transactionsLabel: t('transactions_count'),
-            symbol: symbol,
-          ),
-          const SizedBox(height: 32),
-        ],
-      ),
+      ],
     );
   }
 }
 
-class _ChartCard extends StatelessWidget {
-  const _ChartCard({
-    required this.title,
-    required this.colorScheme,
-    required this.child,
-  });
-
-  final String title;
-  final ColorScheme colorScheme;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: colorScheme.surfaceContainerHighest.withAlpha(0x40),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withAlpha(0x18),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 20),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _DaySummary {
-  final DateTime date;
-  double income = 0;
-  double expenses = 0;
-
-  _DaySummary({required this.date});
-}
-
-List<_DaySummary> _computeWeeklyData(List<TransactionModel> transactions) {
-  final today = DateTime.now();
-  final days = List.generate(7, (i) {
-    final date = DateTime(
-      today.year,
-      today.month,
-      today.day,
-    ).subtract(Duration(days: 6 - i));
-    return _DaySummary(date: date);
-  });
-
-  for (final t in transactions) {
-    final tDate = DateTime(t.date.year, t.date.month, t.date.day);
-    for (int i = 0; i < days.length; i++) {
-      if (days[i].date == tDate) {
-        if (t.isExpense) {
-          days[i].expenses += t.amount;
-        } else {
-          days[i].income += t.amount;
-        }
-        break;
-      }
-    }
-  }
-
-  return days;
-}
-
-class _WeeklyBarChart extends StatelessWidget {
-  const _WeeklyBarChart({
-    required this.weeklyData,
-    required this.incomeColor,
-    required this.expenseColor,
-    required this.colorScheme,
+class _ActivityBarChart extends StatelessWidget {
+  const _ActivityBarChart({
+    required this.buckets,
+    required this.axisMax,
+    required this.palette,
     required this.reduceAnimations,
     required this.incomeTooltip,
     required this.expensesTooltip,
-    required this.symbol,
+    required this.money,
   });
 
-  final List<_DaySummary> weeklyData;
-  final Color incomeColor;
-  final Color expenseColor;
-  final ColorScheme colorScheme;
+  final List<ActivityBucket> buckets;
+  final double axisMax;
+  final AppPalette palette;
   final bool reduceAnimations;
   final String incomeTooltip;
   final String expensesTooltip;
-  final String symbol;
+  final MoneyFormat money;
 
   @override
   Widget build(BuildContext context) {
-    final maxY = weeklyData.fold<double>(
-      0,
-      (max, d) => (d.income > max && d.income > d.expenses)
-          ? d.income
-          : (d.expenses > max ? d.expenses : max),
-    );
+    // In colourblind mode the two series also differ in outline, so a bar can
+    // be identified without reading its hue.
+    final border = palette.distinguishByForm
+        ? BorderSide(color: palette.inkPrimary, width: 1)
+        : BorderSide.none;
+
+    BarChartRodData rod(double value, Color color, {required bool outlined}) {
+      return BarChartRodData(
+        toY: value,
+        color: color,
+        width: 12,
+        borderSide: outlined ? border : BorderSide.none,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+        backDrawRodData: BackgroundBarChartRodData(
+          show: true,
+          toY: axisMax,
+          color: palette.surfaceWell,
+        ),
+      );
+    }
 
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: maxY == 0 ? 100 : maxY * 1.2,
-        barGroups: weeklyData.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final day = entry.value;
-          return BarChartGroupData(
-            x: idx,
-            barRods: [
-              BarChartRodData(
-                toY: day.income,
-                color: incomeColor,
-                width: 12,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
-                ),
-                backDrawRodData: BackgroundBarChartRodData(
-                  show: true,
-                  toY: maxY == 0 ? 100 : maxY * 1.2,
-                  color: colorScheme.surfaceContainerHighest.withAlpha(0x55),
-                ),
-              ),
-              BarChartRodData(
-                toY: day.expenses,
-                color: expenseColor,
-                width: 12,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
-                ),
-                backDrawRodData: BackgroundBarChartRodData(
-                  show: true,
-                  toY: maxY == 0 ? 100 : maxY * 1.2,
-                  color: colorScheme.surfaceContainerHighest.withAlpha(0x55),
-                ),
-              ),
-            ],
-          );
-        }).toList(),
+        maxY: axisMax,
+        barGroups: [
+          for (var i = 0; i < buckets.length; i++)
+            BarChartGroupData(
+              x: i,
+              barRods: [
+                rod(buckets[i].income, palette.income, outlined: false),
+                rod(buckets[i].expenses, palette.expense, outlined: true),
+              ],
+            ),
+        ],
         titlesData: FlTitlesData(
           show: true,
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= weeklyData.length) {
-                  return const SizedBox();
+                final index = value.toInt();
+                if (index < 0 || index >= buckets.length) {
+                  return const SizedBox.shrink();
                 }
-                final dayNames = [
-                  'Mon',
-                  'Tue',
-                  'Wed',
-                  'Thu',
-                  'Fri',
-                  'Sat',
-                  'Sun',
-                ];
-                final weekday = weeklyData[idx].date.weekday;
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: AppSpace.sm),
                   child: Text(
-                    dayNames[weekday - 1],
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    buckets[index].label,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(color: palette.inkSecondary),
                   ),
                 );
               },
@@ -286,12 +197,18 @@ class _WeeklyBarChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 40,
+              reservedSize: 44,
+              // Exactly the gridline interval, so every label sits on a line
+              // and the four values are clean fractions of the top.
+              interval: axisMax / 4,
               getTitlesWidget: (value, meta) {
-                if (value == 0) return const SizedBox();
+                if (value == 0) return const SizedBox.shrink();
                 return Text(
-                  '$symbol${value.toInt()}',
-                  style: TextStyle(fontSize: 10, color: colorScheme.outline),
+                  money.axisLabel(value),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.copyWith(color: palette.inkFaint),
                 );
               },
             ),
@@ -306,13 +223,9 @@ class _WeeklyBarChart extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: maxY == 0 ? 25 : (maxY * 1.2) / 4,
-          getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: colorScheme.outlineVariant.withAlpha(0x33),
-              strokeWidth: 1,
-            );
-          },
+          horizontalInterval: axisMax / 4,
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: palette.hairline, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barTouchData: BarTouchData(
@@ -320,7 +233,7 @@ class _WeeklyBarChart extends StatelessWidget {
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final label = rodIndex == 0 ? incomeTooltip : expensesTooltip;
               return BarTooltipItem(
-                '$label\n$symbol${rod.toY.toStringAsFixed(2)}',
+                '$label\n${money.amount(rod.toY)}',
                 TextStyle(
                   color: rod.color,
                   fontWeight: FontWeight.w600,
@@ -334,7 +247,7 @@ class _WeeklyBarChart extends StatelessWidget {
       ),
       duration: reduceAnimations
           ? Duration.zero
-          : const Duration(milliseconds: 250),
+          : const Duration(milliseconds: AppMotion.base),
     );
   }
 }
@@ -343,24 +256,20 @@ class _DistributionPieChart extends StatefulWidget {
   const _DistributionPieChart({
     required this.totalIncome,
     required this.totalExpenses,
-    required this.incomeColor,
-    required this.expenseColor,
-    required this.colorScheme,
+    required this.palette,
     required this.reduceAnimations,
     required this.incomeLabel,
     required this.expensesLabel,
-    required this.symbol,
+    required this.money,
   });
 
   final double totalIncome;
   final double totalExpenses;
-  final Color incomeColor;
-  final Color expenseColor;
-  final ColorScheme colorScheme;
+  final AppPalette palette;
   final bool reduceAnimations;
   final String incomeLabel;
   final String expensesLabel;
-  final String symbol;
+  final MoneyFormat money;
 
   @override
   State<_DistributionPieChart> createState() => _DistributionPieChartState();
@@ -371,11 +280,39 @@ class _DistributionPieChartState extends State<_DistributionPieChart> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = widget.palette;
     final total = widget.totalIncome + widget.totalExpenses;
-    final incomePercent = total > 0 ? (widget.totalIncome / total * 100) : 0.0;
-    final expensesPercent = total > 0
-        ? (widget.totalExpenses / total * 100)
-        : 0.0;
+    final incomePercent = total > 0 ? widget.totalIncome / total * 100 : 0.0;
+    final expensesPercent =
+        total > 0 ? widget.totalExpenses / total * 100 : 0.0;
+
+    PieChartSectionData section({
+      required int index,
+      required Color color,
+      required double value,
+      required double percent,
+      required IconData icon,
+    }) {
+      final touched = _touchedIndex == index;
+      // `readableOn` rather than `onPrimary`/`onError`: the slice is painted in
+      // the semantic income/expense colour, which is unrelated to either of
+      // those scheme slots, so the old pairing could put white on a light
+      // green.
+      final ink = readableOn(color);
+      return PieChartSectionData(
+        color: color,
+        value: value,
+        title: touched ? '${percent.toStringAsFixed(0)}%' : '',
+        radius: touched ? 65 : 55,
+        titleStyle: TextStyle(
+          color: ink,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
+        badgeWidget: touched ? Icon(icon, color: ink, size: 18) : null,
+        badgePositionPercentageOffset: 0,
+      );
+    }
 
     return Row(
       children: [
@@ -386,90 +323,63 @@ class _DistributionPieChartState extends State<_DistributionPieChart> {
               pieTouchData: PieTouchData(
                 touchCallback: (event, response) {
                   setState(() {
-                    if (!event.isInterestedForInteractions ||
-                        response == null ||
-                        response.touchedSection == null) {
-                      _touchedIndex = -1;
-                      return;
-                    }
+                    final touched = response?.touchedSection;
                     _touchedIndex =
-                        response.touchedSection!.touchedSectionIndex;
+                        (!event.isInterestedForInteractions || touched == null)
+                            ? -1
+                            : touched.touchedSectionIndex;
                   });
                 },
               ),
               sectionsSpace: 3,
               centerSpaceRadius: 40,
               sections: [
-                PieChartSectionData(
-                  color: widget.incomeColor,
+                section(
+                  index: 0,
+                  color: palette.income,
                   value: widget.totalIncome,
-                  title: _touchedIndex == 0
-                      ? '${incomePercent.toStringAsFixed(0)}%'
-                      : '',
-                  radius: _touchedIndex == 0 ? 65 : 55,
-                  titleStyle: TextStyle(
-                    color: widget.colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                  badgeWidget: _touchedIndex == 0
-                      ? Icon(
-                          Icons.call_received,
-                          color: widget.colorScheme.onPrimary,
-                          size: 18,
-                        )
-                      : null,
-                  badgePositionPercentageOffset: 0,
+                  percent: incomePercent,
+                  icon: AppIcons.income,
                 ),
-                PieChartSectionData(
-                  color: widget.expenseColor,
+                section(
+                  index: 1,
+                  color: palette.expense,
                   value: widget.totalExpenses,
-                  title: _touchedIndex == 1
-                      ? '${expensesPercent.toStringAsFixed(0)}%'
-                      : '',
-                  radius: _touchedIndex == 1 ? 65 : 55,
-                  titleStyle: TextStyle(
-                    color: widget.colorScheme.onError,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                  badgeWidget: _touchedIndex == 1
-                      ? Icon(
-                          Icons.call_made,
-                          color: widget.colorScheme.onError,
-                          size: 18,
-                        )
-                      : null,
-                  badgePositionPercentageOffset: 0,
+                  percent: expensesPercent,
+                  icon: AppIcons.expense,
                 ),
               ],
             ),
             duration: widget.reduceAnimations
                 ? Duration.zero
-                : const Duration(milliseconds: 250),
+                : const Duration(milliseconds: AppMotion.base),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: AppSpace.lg),
         Expanded(
           flex: 2,
+          // The legend is always present, not only while a slice is touched:
+          // in colourblind mode it is the only thing naming the two slices.
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _LegendItem(
-                color: widget.incomeColor,
+                color: palette.income,
                 label: widget.incomeLabel,
                 amount: widget.totalIncome,
                 percent: incomePercent,
-                symbol: widget.symbol,
+                money: widget.money,
+                tone: MoneyTone.income,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpace.lg),
               _LegendItem(
-                color: widget.expenseColor,
+                color: palette.expense,
                 label: widget.expensesLabel,
                 amount: widget.totalExpenses,
                 percent: expensesPercent,
-                symbol: widget.symbol,
+                money: widget.money,
+                tone: MoneyTone.expense,
               ),
             ],
           ),
@@ -485,18 +395,20 @@ class _LegendItem extends StatelessWidget {
     required this.label,
     required this.amount,
     required this.percent,
-    required this.symbol,
+    required this.money,
+    required this.tone,
   });
 
   final Color color;
   final String label;
   final double amount;
   final double percent;
-  final String symbol;
+  final MoneyFormat money;
+  final MoneyTone tone;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = context.palette;
     return Row(
       children: [
         Container(
@@ -507,24 +419,24 @@ class _LegendItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(3),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpace.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: palette.inkSecondary),
               ),
-              Text(
-                '$symbol${amount.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+              MoneyText(
+                money.amount(amount),
+                size: MoneySize.caption,
+                tone: tone,
               ),
             ],
           ),
@@ -532,9 +444,9 @@ class _LegendItem extends StatelessWidget {
         Text(
           '${percent.toStringAsFixed(0)}%',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
         ),
       ],
     );
@@ -543,69 +455,50 @@ class _LegendItem extends StatelessWidget {
 
 class _SummaryStats extends StatelessWidget {
   const _SummaryStats({
-    required this.totalIncome,
-    required this.totalExpenses,
+    required this.net,
     required this.incomeCount,
     required this.expenseCount,
-    required this.colorScheme,
     required this.netLabel,
     required this.transactionsLabel,
-    required this.symbol,
+    required this.money,
   });
 
-  final double totalIncome;
-  final double totalExpenses;
+  final double net;
   final int incomeCount;
   final int expenseCount;
-  final ColorScheme colorScheme;
   final String netLabel;
   final String transactionsLabel;
-  final String symbol;
+  final MoneyFormat money;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [colorScheme.primary, colorScheme.primary.withAlpha(0xCC)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withAlpha(0x33),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    final palette = context.palette;
+
+    // Both figures used to be drawn in `colorScheme.onPrimary` — a leftover
+    // from an accent gradient that had already been removed, so near-white ink
+    // was being painted on a plain card surface.
+    return AppCard(
       child: Row(
         children: [
           Expanded(
             child: _StatItem(
               label: netLabel,
-              value: totalIncome - totalExpenses,
-              color: colorScheme.onPrimary,
-              symbol: symbol,
+              child: MoneyText(
+                money.amount(net),
+                size: MoneySize.title,
+                tone: net < 0 ? MoneyTone.expense : MoneyTone.income,
+              ),
             ),
           ),
-          Container(
-            width: 1,
+          SizedBox(
             height: 48,
-            color: colorScheme.onPrimary.withAlpha(0x33),
+            child: VerticalDivider(width: 1, color: palette.hairline),
           ),
           Expanded(
             child: _StatItem(
               label: transactionsLabel,
-              value: 0,
-              color: colorScheme.onPrimary,
-              isTransactionCount: true,
-              incomeCount: incomeCount,
-              expenseCount: expenseCount,
-              symbol: symbol,
+              child: MoneyText('$incomeCount / $expenseCount',
+                  size: MoneySize.title),
             ),
           ),
         ],
@@ -615,23 +508,10 @@ class _SummaryStats extends StatelessWidget {
 }
 
 class _StatItem extends StatelessWidget {
-  const _StatItem({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.symbol,
-    this.isTransactionCount = false,
-    this.incomeCount = 0,
-    this.expenseCount = 0,
-  });
+  const _StatItem({required this.label, required this.child});
 
   final String label;
-  final double value;
-  final Color color;
-  final String symbol;
-  final bool isTransactionCount;
-  final int incomeCount;
-  final int expenseCount;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -639,71 +519,15 @@ class _StatItem extends StatelessWidget {
       children: [
         Text(
           label,
+          textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: color.withAlpha(0xCC),
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          isTransactionCount
-              ? '$incomeCount / $expenseCount'
-              : '$symbol${value.toStringAsFixed(2)}',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: color,
-            fontSize: 22,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EmptyAnalytics extends StatelessWidget {
-  const _EmptyAnalytics({
-    required this.colorScheme,
-    required this.message,
-    required this.hint,
-  });
-
-  final ColorScheme colorScheme;
-  final String message;
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 120),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.insert_chart_outlined,
-              size: 80,
-              color: colorScheme.outlineVariant.withAlpha(0x88),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+                color: context.palette.inkSecondary,
+                letterSpacing: 0.8,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hint,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ),
-      ),
+        const SizedBox(height: AppSpace.xs),
+        child,
+      ],
     );
   }
 }

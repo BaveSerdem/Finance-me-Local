@@ -1,12 +1,12 @@
-/*
- * ============================================================================
- * Project: Finance me Local
- * Author: BaveSerdem
- * Copyright (c) 2026.
- *
- * LICENSE: Personal Non-Commercial Use Only
- * ============================================================================
- */
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
 
 import 'dart:typed_data';
 import 'package:hive_ce/hive.dart';
@@ -26,6 +26,7 @@ class DatabaseService {
   static const String _transactionsBoxName = 'transactions';
   static const String _subscriptionsBoxName = 'subscriptions';
   static const String _settingsBoxName = 'settings';
+  static const String _encryptionEnabledKey = 'encryption_enabled';
 
   late final Box<String> _settingsBox;
 
@@ -65,6 +66,22 @@ class DatabaseService {
     return _settingsBox;
   }
 
+  /// Returns null if not yet decided (first launch),
+  /// true if the user chose encryption, false if they opted out.
+  ///
+  /// Stored as a String because `settingsBox` is a `Box<String>` (mirrors the
+  /// existing `has_password` value), so the flag reads cleanly without opening
+  /// any encrypted box — it must be known before a cipher is chosen.
+  bool? getEncryptionChoice() {
+    final val = _settingsBox.get(_encryptionEnabledKey);
+    if (val == null) return null;
+    return val == 'true';
+  }
+
+  Future<void> setEncryptionChoice(bool enabled) async {
+    await _settingsBox.put(_encryptionEnabledKey, enabled ? 'true' : 'false');
+  }
+
   Future<void> initialize() async {
     if (_initialized) return;
     final dir = await getApplicationDocumentsDirectory();
@@ -77,7 +94,11 @@ class DatabaseService {
 
   Future<void> openBoxes(Uint8List key) async {
     if (_boxesOpened) return;
-    final cipher = HiveAesCipher(key);
+    // null (never decided) is treated as encrypted: every pre-existing live
+    // user has a password and encrypted boxes but no stored choice flag, so the
+    // boxes must open WITH a cipher unless the user explicitly opted out.
+    final encrypted = getEncryptionChoice() != false;
+    final cipher = encrypted ? HiveAesCipher(key) : null;
     final txBox = await Hive.openBox<TransactionModel>(
       _transactionsBoxName,
       encryptionCipher: cipher,
@@ -89,6 +110,20 @@ class DatabaseService {
     _transactionsBox = txBox;
     _subscriptionsBox = subBox;
     _boxesOpened = true;
+    await _persistRegeneratedSubscriptionIds();
+  }
+
+  /// Legacy records predate the `id` field and had none stored, so the adapter
+  /// generates a fresh id on first read. Persist that id exactly once so every
+  /// later read finds the stored value and stops regenerating (which would
+  /// otherwise defeat `cancelNotification` id-based lookups).
+  Future<void> _persistRegeneratedSubscriptionIds() async {
+    for (final sub in _subscriptionsBox!.values) {
+      if (sub.idWasRegenerated) {
+        sub.idWasRegenerated = false;
+        await sub.save();
+      }
+    }
   }
 
   /// Deletes all boxes from disk and resets internal state.
@@ -108,21 +143,37 @@ class DatabaseService {
   Future<void> reEncryptBoxes(
     Uint8List oldKey,
     Uint8List newKey,
-  ) async {
+  ) =>
+      _reEncryptToCipher(HiveAesCipher(newKey));
+
+  /// Enables encryption for an app currently running with unencrypted boxes.
+  ///
+  /// Same underlying re-encryption as [reEncryptBoxes]; only the entry point
+  /// differs because no password existed before, so there is no old key.
+  Future<void> enableEncryption(Uint8List newKey) =>
+      _reEncryptToCipher(HiveAesCipher(newKey));
+
+  /// The one re-encryption path, shared by change-password and
+  /// enable-encryption.
+  ///
+  /// Reads every record from the currently open boxes (whatever cipher — or
+  /// none — they were opened with), deep-copies it into fresh objects so a
+  /// `HiveObject` never lives in two boxes at once, deletes the old files,
+  /// reopens under [newCipher] and reinserts. Ordering is load-bearing: the
+  /// copy happens *before* `deleteFromDisk`, so a mid-flight failure cannot
+  /// leave the old files half-deleted with a reopened box still empty.
+  Future<void> _reEncryptToCipher(HiveAesCipher newCipher) async {
     final txMap = _transactionsBox!.toMap();
     final subMap = _subscriptionsBox!.toMap();
 
     final freshTx = txMap.map((k, v) => MapEntry(k, _copyTransaction(v)));
-    final freshSub = txMap.isEmpty
-        ? subMap.map((k, v) => MapEntry(k, _copySubscription(v)))
-        : subMap.map((k, v) => MapEntry(k, _copySubscription(v)));
+    final freshSub = subMap.map((k, v) => MapEntry(k, _copySubscription(v)));
 
     await _transactionsBox!.deleteFromDisk();
     await _subscriptionsBox!.deleteFromDisk();
     _transactionsBox = null;
     _subscriptionsBox = null;
 
-    final newCipher = HiveAesCipher(newKey);
     _transactionsBox = await Hive.openBox<TransactionModel>(
       _transactionsBoxName,
       encryptionCipher: newCipher,
@@ -152,6 +203,7 @@ class DatabaseService {
       isExpense: src.isExpense,
     );
     copy.isRecurring = src.isRecurring;
+    copy.subscriptionId = src.subscriptionId;
     return copy;
   }
 
@@ -168,6 +220,21 @@ class DatabaseService {
       id: src.id,
       createdAt: src.createdAt,
     );
+  }
+
+  /// Closes only the encrypted data boxes, leaving the settings box open.
+  ///
+  /// Used by change-password invoked from the lock screen, where the data
+  /// boxes had to be opened temporarily for re-encryption but the app must
+  /// remain locked afterwards. Unlike [close], this keeps `_initialized`
+  /// true so the lockscreen can still read `getEncryptionChoice()` and the
+  /// next unlock can call [openBoxes] directly.
+  Future<void> closeDataBoxes() async {
+    await _transactionsBox?.close();
+    await _subscriptionsBox?.close();
+    _transactionsBox = null;
+    _subscriptionsBox = null;
+    _boxesOpened = false;
   }
 
   Future<void> close() async {

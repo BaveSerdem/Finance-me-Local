@@ -1,17 +1,29 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../localization/locale_provider.dart';
 import '../services/secure_storage_service.dart';
 
-class EulaScreen extends StatefulWidget {
+class EulaScreen extends ConsumerStatefulWidget {
   final VoidCallback? onAccepted;
 
   const EulaScreen({super.key, this.onAccepted});
 
   @override
-  State<EulaScreen> createState() => _EulaScreenState();
+  ConsumerState<EulaScreen> createState() => _EulaScreenState();
 }
 
-class _EulaScreenState extends State<EulaScreen> {
+class _EulaScreenState extends ConsumerState<EulaScreen> {
   Future<void> _onAccept() async {
     await SecureStorageService().setEulaAccepted(true);
     if (!mounted) return;
@@ -26,6 +38,7 @@ class _EulaScreenState extends State<EulaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = ref.watch(stringsProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isLarge = MediaQuery.of(context).size.height > 700;
@@ -53,7 +66,7 @@ class _EulaScreenState extends State<EulaScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Terms of Use',
+                t('terms_of_use'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w600,
@@ -76,8 +89,7 @@ class _EulaScreenState extends State<EulaScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Welcome to Finance me Local. Before you begin, '
-                          'please read and accept our Terms of Use:',
+                          t('eula_intro'),
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: colorScheme.onSurface,
                           ),
@@ -85,32 +97,23 @@ class _EulaScreenState extends State<EulaScreen> {
                         const SizedBox(height: 20),
                         _buildSection(
                           theme,
-                          '100% Local & Private',
-                          'This app operates entirely offline. Your data is '
-                              'encrypted and stored exclusively on your device. '
-                              'We do not collect, track, or have access to any of '
-                              'your information.',
+                          t('eula_local_title'),
+                          t('eula_local_body'),
                         ),
                         _buildSection(
                           theme,
-                          'A Personal Tool, Not an Advisor',
-                          'This application is strictly a personal financial '
-                              'diary and calculator. It does not provide financial '
-                              'advice. You are your own financial manager.',
+                          t('eula_advisor_title'),
+                          t('eula_advisor_body'),
                         ),
                         _buildSection(
                           theme,
-                          'Zero Liability',
-                          'The developer is strictly not liable for any data '
-                              'loss, forgotten backup passwords, device compromise, '
-                              'or any financial decisions made using this app.',
+                          t('eula_liability_title'),
+                          t('eula_liability_body'),
                         ),
                         _buildSection(
                           theme,
-                          'Your Responsibility',
-                          'You are solely responsible for keeping your '
-                              'biometric locks secure and safely storing your '
-                              'encrypted backup files (.vault) and their passwords.',
+                          t('eula_responsibility_title'),
+                          t('eula_responsibility_body'),
                         ),
                       ],
                     ),
@@ -122,7 +125,7 @@ class _EulaScreenState extends State<EulaScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _onAccept,
-                  child: const Text('I Agree'),
+                  child: Text(t('i_agree')),
                 ),
               ),
               const SizedBox(height: 12),
@@ -130,7 +133,7 @@ class _EulaScreenState extends State<EulaScreen> {
                 width: double.infinity,
                 child: TextButton(
                   onPressed: _onDecline,
-                  child: const Text('Decline'),
+                  child: Text(t('decline')),
                 ),
               ),
               const Spacer(flex: 1),

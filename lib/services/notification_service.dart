@@ -1,8 +1,19 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import '../formatting/money_format.dart';
+import '../localization/app_strings.dart';
 import '../models/subscription_model.dart';
-import '../providers/currency_provider.dart';
 import '../services/database_service.dart';
 
 class NotificationService {
@@ -55,17 +66,46 @@ class NotificationService {
   Future<void> scheduleNotification(SubscriptionModel sub) async {
     if (sub.isPaused || !sub.notifyDayBefore) return;
 
-    final symbol = currencySymbols[
-      DatabaseService().settingsBox.get('currency_code')
-    ] ?? '\$';
+    // Built straight from the settings box: this service has no `WidgetRef`
+    // and no `BuildContext`, which is why `MoneyFormat` is a value class rather
+    // than a provider. It also means notifications finally respect the user's
+    // custom symbol and left/right position, which the old inline lookup here
+    // ignored entirely.
+    final settings = DatabaseService().settingsBox;
+    final money = MoneyFormat.fromSettings(settings);
+
+    // Same source as the UI. Read straight from the settings box rather than
+    // through `localeProvider`, for the same reason `MoneyFormat` is a value
+    // class here: this service runs with no `WidgetRef` and no `BuildContext`.
+    //
+    // Reminders already queued with the OS keep the language they were
+    // scheduled in — re-scheduling the whole box on every language change is
+    // background work traded for a cosmetic gain, so it is deliberately not
+    // done. A reminder is rewritten in the new language the next time its
+    // subscription is saved.
+    final lang = settings.get('app_language') ?? 'en';
 
     final id = _idFromString(sub.id);
     await cancelNotification(sub.id);
 
-    final reminderDate = sub.nextDueDate.subtract(const Duration(days: 1));
-    if (reminderDate.isBefore(DateTime.now())) return;
+    final now = DateTime.now();
+    // Only a due date that has genuinely passed is skipped. A subscription due
+    // today or tomorrow must still be reminded: its reminder moment (due − 1
+    // day) has already gone by in that case, and clamping it forward instead of
+    // dropping it is what keeps the "remind 1 day before" promise.
+    if (sub.nextDueDate.isBefore(DateTime(now.year, now.month, now.day))) {
+      return;
+    }
 
-    final scheduledDate = tz.TZDateTime.from(reminderDate, tz.local);
+    final reminderDate = sub.nextDueDate.subtract(const Duration(days: 1));
+    // `zonedSchedule` requires a strictly future moment, so a same-day or
+    // already-elapsed reminder is pushed a few seconds out rather than
+    // scheduled in the past.
+    final scheduledMoment = reminderDate.isAfter(now)
+        ? reminderDate
+        : now.add(const Duration(seconds: 5));
+
+    final scheduledDate = tz.TZDateTime.from(scheduledMoment, tz.local);
 
     const androidDetails = AndroidNotificationDetails(
       'subscription_reminders',
@@ -78,13 +118,14 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       id,
-      'Upcoming Payment',
-      '${sub.name} — $symbol${sub.amount.toStringAsFixed(2)} is due tomorrow',
+      AppStrings.get('notif_payment_title', lang),
+      AppStrings.format('notif_payment_body', lang, {
+        'name': sub.name,
+        'amount': money.amount(sub.amount),
+      }),
       scheduledDate,
       details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 

@@ -1,3 +1,13 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,36 +20,68 @@ import '../services/biometric_service.dart';
 import '../services/key_service.dart';
 import '../services/secure_storage_service.dart';
 import '../services/database_service.dart';
+import '../services/app_reset_service.dart';
 import '../localization/locale_provider.dart';
+import '../providers/theme_provider.dart';
+import '../theme/app_icons.dart';
+import '../theme/app_metrics.dart';
+import '../widgets/app_scaffold.dart';
+import '../widgets/settings_tiles.dart';
+import '../widgets/section_header.dart';
+import '../widgets/app_snack.dart';
+import '../widgets/app_dialogs.dart';
+import '../widgets/change_password_flow.dart';
+import '../widgets/enable_encryption_flow.dart';
 
 class SecurityScreen extends ConsumerWidget {
   const SecurityScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
     final t = ref.watch(stringsProvider);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t('security_privacy')),
-        centerTitle: true,
-      ),
+    // When encryption is off there is no password and no biometric unlock, so
+    // those two sections have no meaning; only the Danger Zone remains.
+    final encryptionOff = DatabaseService().getEncryptionChoice() == false;
+    return AppScaffold(
+      title: t("security_privacy"),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
-          _SectionHeader(title: t('authentication'), colorScheme: colorScheme),
-          _BiometricTile(),
-          const Divider(height: 32),
-          _SectionHeader(title: t('password'), colorScheme: colorScheme),
-          const _ChangePasswordTile(),
-          const Divider(height: 32),
-          _SectionHeader(title: 'Danger Zone', colorScheme: colorScheme),
+          // Unencrypted branch: no password and no encrypted biometric unlock,
+          // so the Authentication/Password sections have no meaning here.
+          // Instead this branch owns the path to enabling encryption later.
+          if (!encryptionOff) ...[
+            SectionHeader(title: t('authentication')),
+            _BiometricTile(),
+            const Divider(height: 32),
+            SectionHeader(title: t('password')),
+            const _ChangePasswordTile(),
+            const Divider(height: 32),
+          ] else ...[
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.enhanced_encryption_outlined),
+                title: Text(t('enable_encryption_now_title')),
+                subtitle: Text(t('enable_encryption_now_subtitle')),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showEnableEncryptionFlow(context, ref),
+              ),
+            ),
+          ],
+          // The one header on this screen that names a real group of three, and
+          // the only one that should escalate: its cards can destroy data, so
+          // it carries the error colour rather than the neutral accent every
+          // other header uses.
+          SectionHeader(
+            title: t('danger_zone'),
+            color: Theme.of(context).colorScheme.error,
+          ),
+          // No `SizedBox` between these. `cardTheme.margin` already puts
+          // `AppSpace.sm` under every card, so the explicit gaps doubled it and
+          // made this group sit looser than every other list in the app.
           _ExportTile(),
-          const SizedBox(height: 8),
           _ImportTile(),
-          const SizedBox(height: 8),
           const _DeleteAllDataTile(),
-          const SizedBox(height: 32),
         ],
       ),
     );
@@ -49,28 +91,6 @@ class SecurityScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 // Section Header
 // ---------------------------------------------------------------------------
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.colorScheme});
-
-  final String title;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 12),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: colorScheme.primary,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Biometric Lock
@@ -104,46 +124,15 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
     }
   }
 
-  Future<String?> _promptForPassword() async {
-    final controller = TextEditingController();
-    final ctx = context;
-    final result = await showDialog<String>(
-      context: ctx,
-      builder: (ctx) {
-        var isEmpty = true;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Enter Password'),
-              content: TextField(
-                controller: controller,
-                obscureText: true,
-                autofocus: true,
-                decoration: const InputDecoration(hintText: 'Your app password'),
-                onChanged: (value) {
-                  final empty = value.isEmpty;
-                  if (empty != isEmpty) {
-                    setDialogState(() => isEmpty = empty);
-                  }
-                },
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: isEmpty ? null : () => Navigator.pop(ctx, controller.text),
-                  child: const Text('Confirm'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  Future<String?> _promptForPassword() {
+    final t = ref.read(stringsProvider);
+    return showPasswordPromptDialog(
+      context,
+      title: t('enter_password'),
+      label: t('your_app_password'),
+      confirmLabel: t('confirm'),
+      cancelLabel: t('cancel'),
     );
-    controller.dispose();
-    return result;
   }
 
   @override
@@ -167,9 +156,10 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
       child: SwitchListTile(
         secondary: const Icon(Icons.fingerprint),
         title: Text(t('biometric_lock')),
-        subtitle: Text(
-          _biometricEnabled ? t('biometric_active') : t('biometric_off'),
-        ),
+        // Was "Biometric lock is off" — a sentence restating the switch beside
+        // it. A subtitle should say what the control *does*, since the switch
+        // already says what state it is in.
+        subtitle: Text(t('biometric_lock_subtitle')),
         value: _biometricEnabled,
         onChanged: (value) async {
           HapticFeedback.lightImpact();
@@ -189,14 +179,17 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
 
                 if (verifierB64 == null || saltB64 == null) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(content: Text('Password verification not available. Please restart the app.')),
+                    showAppSnack(
+                      ctx,
+                      t('password_verify_unavailable'),
+                      kind: SnackKind.error,
                     );
                   }
                   return;
                 }
 
                 final keyService = KeyService();
+                keyService.clearCache();
                 final salt = base64Decode(saltB64);
                 final derivedKey = await keyService.deriveKey(password, salt);
                 final candidate = keyService.computeVerifier(derivedKey);
@@ -204,8 +197,10 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
 
                 if (!keyService.constantTimeEquals(candidate, storedVerifier)) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(content: Text('Incorrect password')),
+                    showAppSnack(
+                      ctx,
+                      t('incorrect_password'),
+                      kind: SnackKind.error,
                     );
                   }
                   return;
@@ -217,9 +212,7 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
               }
             } catch (e) {
               if (context.mounted) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(content: Text('Failed to enable biometric: $e'), behavior: SnackBarBehavior.floating),
-                );
+                showErrorSnack(ctx, t('failed_enable_biometric'), e);
               }
               return;
             }
@@ -236,302 +229,19 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
 // Change Password
 // ---------------------------------------------------------------------------
 
-class _ChangePasswordTile extends ConsumerStatefulWidget {
+class _ChangePasswordTile extends ConsumerWidget {
   const _ChangePasswordTile();
 
   @override
-  ConsumerState<_ChangePasswordTile> createState() =>
-      _ChangePasswordTileState();
-}
-
-class _ChangePasswordTileState
-    extends ConsumerState<_ChangePasswordTile> {
-  final bool _loading = false;
-
-  Future<void> _onTap() async {
-    HapticFeedback.lightImpact();
-    final oldKey = await _verifyIdentity();
-    if (oldKey == null || !mounted) return;
-    await _showNewPasswordDialog(oldKey);
-  }
-
-  Future<Uint8List?> _verifyIdentity() async {
-    final secureStorage = SecureStorageService();
-    final verifierB64 = await secureStorage.getPasswordVerifier();
-    final saltB64 = await secureStorage.getKdfSalt();
-    if (verifierB64 == null || saltB64 == null) return null;
-
-    final biometricEnabled =
-        await BiometricService(
-          secureStorage: secureStorage,
-        ).isBiometricLoginEnabled();
-
-    if (!mounted) return null;
-
-    if (biometricEnabled) {
-      final usesBiometric = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Verify Identity'),
-          content: const Text(
-            'Use your current password or fingerprint to continue.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Use Password'),
-            ),
-            FilledButton.icon(
-              icon: const Icon(Icons.fingerprint),
-              label: const Text('Use Fingerprint'),
-              onPressed: () => Navigator.pop(ctx, true),
-            ),
-          ],
-        ),
-      );
-      if (usesBiometric == null) return null;
-
-      if (usesBiometric) {
-        final biometricService = BiometricService(
-          secureStorage: secureStorage,
-        );
-        final authenticated = await biometricService.authenticate();
-        if (!authenticated || !mounted) return null;
-        final keyDataB64 = await secureStorage.getBiometricKeyData();
-        if (keyDataB64 == null) return null;
-        return base64Decode(keyDataB64);
-      }
-    }
-
-    if (!mounted) return null;
-    final password = await _promptCurrentPassword();
-    if (password == null || password.isEmpty) return null;
-
-    final keyService = KeyService();
-    final salt = base64Decode(saltB64);
-    final derivedKey = await keyService.deriveKey(password, salt);
-    final candidate = keyService.computeVerifier(derivedKey);
-    final storedVerifier = base64Decode(verifierB64);
-
-    if (!keyService.constantTimeEquals(candidate, storedVerifier)) {
-      if (!mounted) return null;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Incorrect password'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return null;
-    }
-    return derivedKey;
-  }
-
-  Future<String?> _promptCurrentPassword() async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        var isEmpty = true;
-        return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Current Password'),
-            content: TextField(
-              controller: controller,
-              obscureText: true,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Enter your current password',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (v) {
-                final empty = v.isEmpty;
-                if (empty != isEmpty) {
-                  setDialogState(() => isEmpty = empty);
-                }
-              },
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed:
-                    isEmpty ? null : () => Navigator.pop(ctx, controller.text),
-                child: const Text('Verify'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    controller.dispose();
-    return result;
-  }
-
-  Future<void> _showNewPasswordDialog(Uint8List oldKey) async {
-    final newPassController = TextEditingController();
-    final confirmController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('New Password'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: newPassController,
-                obscureText: true,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'New Password',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) =>
-                    v == null || v.length < 4 ? 'Too short' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: confirmController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm New Password',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) =>
-                    v != newPassController.text
-                        ? 'Passwords do not match'
-                        : null,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(ctx, true);
-              }
-            },
-            child: const Text('Change Password'),
-          ),
-        ],
-      ),
-    );
-
-    final newPassword = newPassController.text;
-    newPassController.dispose();
-    confirmController.dispose();
-
-    if (confirmed != true || !mounted) return;
-    await _performPasswordChange(oldKey, newPassword);
-  }
-
-  Future<void> _performPasswordChange(
-    Uint8List oldKey,
-    String newPassword,
-  ) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => PopScope(
-        canPop: false,
-        child: AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              const Text(
-                'Changing password...',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Do not close the app.',
-                style: TextStyle(
-                  color: Theme.of(ctx).colorScheme.error,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    try {
-      final keyService = KeyService();
-      final secureStorage = SecureStorageService();
-
-      final (newKey, newSalt) = await keyService.deriveNewKey(newPassword);
-
-      await DatabaseService().reEncryptBoxes(oldKey, newKey);
-
-      final newVerifier = keyService.computeVerifier(newKey);
-      await secureStorage.savePasswordVerifier(base64Encode(newVerifier));
-      await secureStorage.saveKdfSalt(base64Encode(newSalt));
-
-      keyService.clearCache();
-
-      final biometricEnabled =
-          await BiometricService(
-            secureStorage: secureStorage,
-          ).isBiometricLoginEnabled();
-
-      if (biometricEnabled) {
-        final newToken = KeyService.computeBiometricToken(newKey);
-        await secureStorage.saveBiometricToken(newToken);
-        await secureStorage.saveBiometricKeyData(newKey);
-      }
-
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password changed successfully'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to change password: $e'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(stringsProvider);
     return Card(
       child: ListTile(
         leading: const Icon(Icons.lock_reset_outlined),
-        title: const Text('Change Password'),
-        subtitle: const Text('Update your app unlock password'),
-        trailing: _loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.chevron_right),
-        onTap: _loading ? null : _onTap,
+        title: Text(t('change_password')),
+        subtitle: Text(t('change_password_subtitle')),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => showChangePasswordFlow(context, ref),
       ),
     );
   }
@@ -541,20 +251,24 @@ class _ChangePasswordTileState
 // Export Backup
 // ---------------------------------------------------------------------------
 
+/// Backup export.
+///
+/// Was a bare full-width `OutlinedButton` sitting between cards, so two of the
+/// five rows in this screen spoke a different visual language from the rest.
+/// `SettingsTile` is the language everything else here uses.
 class _ExportTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = ref.watch(stringsProvider);
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        icon: const Icon(Icons.upload_file),
-        label: Text(t('export_encrypted_backup')),
-        onPressed: () {
-          HapticFeedback.mediumImpact();
-          _showPasswordDialog(context, ref);
-        },
-      ),
+    final reduceMotion = ref.watch(reduceMotionProvider);
+    return SettingsTile(
+      icon: Icons.upload_file,
+      title: t('export_encrypted_backup'),
+      // These two carried no subtitle while the third card in the same group
+      // did, so the group read as two short rows and one tall one.
+      subtitle: t('export_backup_subtitle'),
+      hapticsEnabled: !reduceMotion,
+      onTap: () => _showPasswordDialog(context, ref),
     );
   }
 }
@@ -567,16 +281,13 @@ class _ImportTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = ref.watch(stringsProvider);
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        icon: const Icon(Icons.file_download),
-        label: Text(t('import_encrypted_backup')),
-        onPressed: () {
-          HapticFeedback.mediumImpact();
-          _startImport(context, ref);
-        },
-      ),
+    final reduceMotion = ref.watch(reduceMotionProvider);
+    return SettingsTile(
+      icon: Icons.file_download,
+      title: t('import_encrypted_backup'),
+      subtitle: t('import_backup_subtitle'),
+      hapticsEnabled: !reduceMotion,
+      onTap: () => _startImport(context, ref),
     );
   }
 }
@@ -585,108 +296,51 @@ class _ImportTile extends ConsumerWidget {
 // Shared password dialog for export/import
 // ---------------------------------------------------------------------------
 
-void _showPasswordDialog(BuildContext context, WidgetRef ref) {
+Future<void> _showPasswordDialog(BuildContext context, WidgetRef ref) async {
   final t = ref.read(stringsProvider);
-  final passwordController = TextEditingController();
-  final confirmController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
 
-  showDialog(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: Text(t('set_backup_password')),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: passwordController,
-                decoration: InputDecoration(
-                  labelText: t('password'),
-                  border: const OutlineInputBorder(),
-                ),
-                obscureText: true,
-                validator: (v) =>
-                    v == null || v.isEmpty ? t('password_required') : null,
-                autofocus: true,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: confirmController,
-                decoration: InputDecoration(
-                  labelText: t('confirm_password'),
-                  border: const OutlineInputBorder(),
-                ),
-                obscureText: true,
-                validator: (v) {
-                  if (v != passwordController.text) {
-                    return t('passwords_do_not_match');
-                  }
-                  return null;
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(t('cancel')),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              Navigator.of(dialogContext).pop();
-              try {
-                await _exportBackup(context, passwordController.text, t);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Export failed: $e'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text(t('proceed')),
-          ),
-        ],
-      );
-    },
+  final password = await showNewPasswordDialog(
+    context,
+    title: t('set_backup_password'),
+    passwordLabel: t('password'),
+    confirmLabel: t('confirm_password'),
+    submitLabel: t('proceed'),
+    cancelLabel: t('cancel'),
+    requiredMessage: t('password_required'),
+    mismatchMessage: t('passwords_do_not_match'),
+    minLength: 6,
+    tooShortMessage: t('password_too_short'),
   );
+
+  if (password == null || !context.mounted) return;
+
+  try {
+    await _exportBackup(context, ref, password);
+  } catch (e) {
+    if (context.mounted) showErrorSnack(context, t('export_failed'), e);
+  }
 }
 
 Future<void> _exportBackup(
   BuildContext context,
+  WidgetRef ref,
   String password,
-  String Function(String) t,
 ) async {
+  final t = ref.read(stringsProvider);
+  final tf = ref.read(stringsFormatProvider);
   final backupService = BackupService();
-  final messenger = ScaffoldMessenger.of(context);
 
   try {
     final path = await backupService.exportData(password);
     if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('${t('backup_saved')} $path'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnack(
+        context,
+        tf('backup_saved_at', {'path': path}),
+        kind: SnackKind.success,
       );
     }
   } catch (e) {
-    if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    if (context.mounted) showErrorSnack(context, t('export_failed'), e);
   }
 }
 
@@ -704,12 +358,7 @@ Future<void> _startImport(BuildContext context, WidgetRef ref) async {
   final fileBytes = result.files.first.bytes;
   if (fileBytes == null || fileBytes.length < 33) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(t('invalid_backup_file')),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showAppSnack(context, t('invalid_backup_file'), kind: SnackKind.error);
     }
     return;
   }
@@ -719,68 +368,28 @@ Future<void> _startImport(BuildContext context, WidgetRef ref) async {
   }
 }
 
-void _showImportPasswordDialog(
+Future<void> _showImportPasswordDialog(
   BuildContext context,
   WidgetRef ref,
   Uint8List fileBytes,
-) {
+) async {
   final t = ref.read(stringsProvider);
-  final passwordController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
 
-  showDialog(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: Text(t('enter_backup_password')),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: passwordController,
-            decoration: InputDecoration(
-              labelText: t('password'),
-              border: const OutlineInputBorder(),
-            ),
-            obscureText: true,
-            validator: (v) =>
-                v == null || v.isEmpty ? t('password_required') : null,
-            autofocus: true,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(t('cancel')),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-              Navigator.of(dialogContext).pop();
-              try {
-                await _importBackup(
-                  context,
-                  ref,
-                  passwordController.text,
-                  fileBytes,
-                  t,
-                );
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Import failed: $e'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text(t('proceed')),
-          ),
-        ],
-      );
-    },
+  final password = await showPasswordPromptDialog(
+    context,
+    title: t('enter_backup_password'),
+    label: t('password'),
+    confirmLabel: t('proceed'),
+    cancelLabel: t('cancel'),
   );
+
+  if (password == null || !context.mounted) return;
+
+  try {
+    await _importBackup(context, ref, password, fileBytes);
+  } catch (e) {
+    if (context.mounted) showErrorSnack(context, t('import_failed'), e);
+  }
 }
 
 Future<void> _importBackup(
@@ -788,10 +397,10 @@ Future<void> _importBackup(
   WidgetRef ref,
   String password,
   Uint8List fileBytes,
-  String Function(String) t,
 ) async {
+  final t = ref.read(stringsProvider);
+  final tf = ref.read(stringsFormatProvider);
   final backupService = BackupService();
-  final messenger = ScaffoldMessenger.of(context);
 
   try {
     final count = await backupService.importData(
@@ -801,44 +410,28 @@ Future<void> _importBackup(
     ref.invalidate(transactionProvider);
     ref.invalidate(subscriptionProvider);
     if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('${t('imported')} $count ${t('imported_records')}'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnack(
+        context,
+        tf('imported_count', {'count': '$count'}),
+        kind: SnackKind.success,
       );
     }
   } on BackupDecryptionException {
     if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(t('wrong_password_error')),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showAppSnack(context, t('wrong_password_error'), kind: SnackKind.error);
     }
   } on BackupCorruptionException catch (e) {
     if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            e.message.contains('Import cancelled')
-                ? t('import_cancelled')
-                : t('corrupt_backup_file'),
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showAppSnack(
+        context,
+        e.message.contains('Import cancelled')
+            ? t('import_cancelled')
+            : t('corrupt_backup_file'),
+        kind: SnackKind.error,
       );
     }
   } catch (e) {
-    if (context.mounted) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+    if (context.mounted) showErrorSnack(context, t('import_failed'), e);
   }
 }
 
@@ -854,77 +447,63 @@ class _DeleteAllDataTile extends ConsumerStatefulWidget {
       _DeleteAllDataTileState();
 }
 
+/// The word the user must type to arm the wipe.
+///
+/// Deliberately **not** translated. It is a typed literal compared byte for
+/// byte, so translating it would mean the comparison and the hint could drift
+/// apart in five languages at once; the hint carries it as a `{word}` slot
+/// instead, which keeps the sentence translatable and the token fixed.
+const String _confirmationWord = 'DELETE';
+
 class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
   bool _deleting = false;
 
+  // Delete-all demands a password only when one exists (i.e. encryption is on).
+  // With encryption off there is no password and no verifier, so a guarded
+  // wipe would dead-end at "password unavailable" and never let the user reach
+  // the confirmation dialog. Pass an explicit "no password" shortcut instead.
+  void _startDelete() {
+    if (DatabaseService().getEncryptionChoice() == false) {
+      _showConfirmationDialog();
+    } else {
+      _showPasswordDialog();
+    }
+  }
+
   Future<void> _confirmDelete() async {
+    final tf = ref.read(stringsFormatProvider);
     setState(() => _deleting = true);
 
     try {
-      await SecureStorageService().clearAll();
-      await DatabaseService().deleteAll();
-
-      if (mounted) {
-        ref.invalidate(transactionProvider);
-        ref.invalidate(subscriptionProvider);
-        SystemNavigator.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            behavior: SnackBarBehavior.floating,
+      // The OS clears the entire app data directory and kills the process, so
+      // no per-box/per-key manual deletion is needed here. If the call
+      // succeeds the process dies shortly after — code below will likely not
+      // execute, which is expected. Only a PlatformException means the wipe
+      // didn't start and the user must be told.
+      await AppResetService.clearAllAppData();
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tf('delete_all_failed', {'message': e.message ?? ''}),
           ),
-        );
-        setState(() => _deleting = false);
-      }
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
   Future<void> _showPasswordDialog() async {
-    final controller = TextEditingController();
-    final password = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        var isEmpty = true;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Enter Password'),
-              content: TextField(
-                controller: controller,
-                obscureText: true,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Your app password',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (v) {
-                  final empty = v.isEmpty;
-                  if (empty != isEmpty) {
-                    setDialogState(() => isEmpty = empty);
-                  }
-                },
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: isEmpty
-                      ? null
-                      : () => Navigator.pop(ctx, controller.text),
-                  child: const Text('Confirm'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    final t = ref.read(stringsProvider);
+
+    final password = await showPasswordPromptDialog(
+      context,
+      title: t('enter_password'),
+      label: t('your_app_password'),
+      confirmLabel: t('confirm'),
+      cancelLabel: t('cancel'),
     );
-    controller.dispose();
 
     if (password == null || password.isEmpty) return;
 
@@ -934,19 +513,17 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
 
     if (verifierB64 == null || saltB64 == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Password verification not available. Please restart the app.',
-            ),
-            behavior: SnackBarBehavior.floating,
-          ),
+        showAppSnack(
+          context,
+          t('password_verify_unavailable'),
+          kind: SnackKind.error,
         );
       }
       return;
     }
 
     final keyService = KeyService();
+    keyService.clearCache();
     final salt = base64Decode(saltB64);
     final derivedKey = await keyService.deriveKey(password, salt);
     final candidate = keyService.computeVerifier(derivedKey);
@@ -954,12 +531,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
 
     if (!keyService.constantTimeEquals(candidate, storedVerifier)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Incorrect password'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showAppSnack(context, t('incorrect_password'), kind: SnackKind.error);
       }
       return;
     }
@@ -970,6 +542,8 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
   }
 
   Future<void> _showConfirmationDialog() async {
+    final t = ref.read(stringsProvider);
+    final tf = ref.read(stringsFormatProvider);
     bool checkbox1 = false;
     bool checkbox2 = false;
     final confirmController = TextEditingController();
@@ -981,7 +555,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
           builder: (context, setDialogState) {
             final canDelete = checkbox1 &&
                 checkbox2 &&
-                confirmController.text == 'DELETE';
+                confirmController.text == _confirmationWord;
             return AlertDialog(
               title: Row(
                 children: [
@@ -990,7 +564,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   const SizedBox(width: 8),
-                  const Text('Delete All Data'),
+                  Flexible(child: Text(t('delete_all_data'))),
                 ],
               ),
               content: SizedBox(
@@ -1000,9 +574,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'This will permanently erase all your transactions, '
-                      'subscriptions, and settings. Encrypted data will be '
-                      'unrecoverable.',
+                      t('delete_all_warning'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -1014,7 +586,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
                       value: checkbox1,
                       onChanged: (v) =>
                           setDialogState(() => checkbox1 = v ?? false),
-                      title: const Text('I understand this action cannot be undone'),
+                      title: Text(t('delete_all_ack_undone')),
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                     CheckboxListTile(
@@ -1023,15 +595,17 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
                       value: checkbox2,
                       onChanged: (v) =>
                           setDialogState(() => checkbox2 = v ?? false),
-                      title: const Text('I take full responsibility'),
+                      title: Text(t('delete_all_ack_responsibility')),
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: confirmController,
-                      decoration: const InputDecoration(
-                        hintText: 'Type DELETE to confirm',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        hintText: tf('delete_all_type_confirm', {
+                          'word': _confirmationWord,
+                        }),
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                       onChanged: (_) => setDialogState(() {}),
@@ -1042,7 +616,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Cancel'),
+                  child: Text(t('cancel')),
                 ),
                 FilledButton(
                   style: FilledButton.styleFrom(
@@ -1052,7 +626,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
                   onPressed: canDelete
                       ? () => Navigator.pop(ctx, true)
                       : null,
-                  child: const Text('Delete Everything'),
+                  child: Text(t('delete_everything')),
                 ),
               ],
             );
@@ -1070,32 +644,35 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
 
   @override
   Widget build(BuildContext context) {
+    final t = ref.watch(stringsProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Card(
       color: colorScheme.errorContainer.withAlpha(60),
+      // Radius from the scale, not a literal 12 — this was the one card in the
+      // app with its own corner.
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: BorderSide(color: colorScheme.error.withAlpha(80)),
       ),
       child: ListTile(
         leading: Icon(Icons.delete_forever, color: colorScheme.error),
         title: Text(
-          'Delete All Data',
+          t('delete_all_data'),
           style: theme.textTheme.titleSmall?.copyWith(
             color: colorScheme.error,
             fontWeight: FontWeight.w700,
           ),
         ),
         subtitle: Text(
-          'Erase all transactions, subscriptions, and settings',
+          t('delete_all_data_subtitle'),
           style: theme.textTheme.bodySmall?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
         ),
-        trailing: Icon(Icons.chevron_right, color: colorScheme.error),
-        onTap: _deleting ? null : _showPasswordDialog,
+        trailing: Icon(AppIcons.forward, color: colorScheme.error),
+        onTap: _deleting ? null : _startDelete,
       ),
     );
   }

@@ -1,3 +1,13 @@
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
+
 import 'package:hive_ce/hive.dart';
 import 'transaction_model.dart';
 
@@ -25,11 +35,20 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
       isRecurring = false;
     }
 
+    String? subscriptionId;
+    try {
+      subscriptionId = reader.readString();
+    } catch (_) {
+      subscriptionId = null;
+    }
+    if (subscriptionId != null && subscriptionId.isEmpty) subscriptionId = null;
+
     final t = TransactionModel(
       title: title,
       amount: amount,
       date: date,
       isExpense: isExpense,
+      subscriptionId: subscriptionId,
     );
     t.isRecurring = isRecurring;
     return t;
@@ -42,5 +61,6 @@ class TransactionModelAdapter extends TypeAdapter<TransactionModel> {
     writer.writeInt(obj.date.millisecondsSinceEpoch);
     writer.writeBool(obj.isExpense);
     writer.writeBool(obj.isRecurring);
+    writer.writeString(obj.subscriptionId ?? '');
   }
 }

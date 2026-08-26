@@ -1,33 +1,34 @@
-/*
- * ============================================================================
- * Project: Finance me Local
- * Author: BaveSerdem
- * Copyright (c) 2026.
- *
- * LICENSE: Personal Non-Commercial Use Only
- * You may download, compile, and use this application for personal, private use.
- * Redistribution, modification for commercial purposes, selling, or monetizing
- * this code, in whole or in part, is strictly prohibited without explicit
- * written permission from the author.
- * ============================================================================
- */
+// Finance Me Local
+// Copyright (c) 2026 BaveSerdem. All rights reserved.
+//
+// This source code is licensed for personal, non-commercial use
+// only. Selling, sublicensing, or commercially redistributing this
+// software — or any derivative work based on it — is prohibited
+// without prior written permission from the copyright holder.
+//
+// Full license: see LICENSE file in the repository root.
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../localization/locale_provider.dart';
+import '../providers/theme_provider.dart';
+import '../theme/app_palette.dart';
 import '../services/database_service.dart';
 import '../services/key_service.dart';
-import '../services/recurring_service.dart';
 import '../services/secure_storage_service.dart';
-import 'home_screen.dart';
+import '../widgets/biometric_enrollment.dart';
+import 'home/home_shell.dart';
 
-class CreatePasswordScreen extends StatefulWidget {
+class CreatePasswordScreen extends ConsumerStatefulWidget {
   const CreatePasswordScreen({super.key});
 
   @override
-  State<CreatePasswordScreen> createState() => _CreatePasswordScreenState();
+  ConsumerState<CreatePasswordScreen> createState() =>
+      _CreatePasswordScreenState();
 }
 
-class _CreatePasswordScreenState extends State<CreatePasswordScreen>
+class _CreatePasswordScreenState extends ConsumerState<CreatePasswordScreen>
     with SingleTickerProviderStateMixin {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -35,16 +36,22 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
-  String? _error;
+
+  /// Error *key*, resolved at build time — see the note in `unlock_screen`.
+  String? _errorKey;
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    // Gated on reduce-motion for the same reason as the unlock screen: this is
+    // the very first screen a new user sees.
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: ref.read(reduceMotionProvider)
+          ? Duration.zero
+          : const Duration(milliseconds: 500),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
@@ -65,8 +72,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
       _passwordController.text == _confirmController.text;
 
   bool get _isValid =>
-      _passwordController.text.length >= 8 &&
-      _confirmController.text.length >= 8 &&
+      _passwordController.text.length >= 6 &&
+      _confirmController.text.length >= 6 &&
       _passwordsMatch;
 
   // ── Password strength: 0–4 ─────────────────────────────────────────
@@ -87,16 +94,22 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
     return score.clamp(0, 4);
   }
 
-  Color _strengthColor(int score, ColorScheme cs) {
+  /// The strength ramp.
+  ///
+  /// Colour is the second channel here, not the only one — the number of
+  /// filled bars carries the same information — so this stays readable without
+  /// hue. The two middle steps come from the palette rather than raw hex,
+  /// which is what makes them legible in light mode.
+  Color _strengthColor(int score, ColorScheme cs, AppPalette palette) {
     switch (score) {
       case 1:
         return cs.error;
       case 2:
-        return const Color(0xFFE67E22); // orange
+        return palette.warning;
       case 3:
-        return const Color(0xFFF1C40F); // amber
+        return palette.caution;
       case 4:
-        return cs.primary;
+        return palette.income;
       default:
         return cs.surfaceContainerHighest;
     }
@@ -107,18 +120,27 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
 
     setState(() {
       _isLoading = true;
-      _error = null;
+      _errorKey = null;
     });
 
     try {
       final password = _passwordController.text;
+      // Fresh derivation every time: a cached key from a previous failed attempt
+      // would let the verifier (computed under that key) disagree with a salt
+      // we are about to persist under a different password — an unrecoverable
+      // vault from the very first setup.
+      _keyService.clearCache();
       final salt = _keyService.generateSalt();
       final key = await _keyService.deriveKey(password, salt);
 
       final db = DatabaseService();
       await db.openBoxes(key);
 
-      await RecurringService.processDueItems();
+      // `RecurringService.processDueItems()` used to run here, between opening
+      // the boxes and persisting the salt and verifier. If it threw, the boxes
+      // were left encrypted under a key whose salt had never been saved — an
+      // unrecoverable vault. It also had nothing to do: this is first run, so
+      // the subscription box is provably empty.
 
       final verifier = _keyService.computeVerifier(key);
       final secureStorage = SecureStorageService();
@@ -127,14 +149,17 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
 
       await db.settingsBox.put('has_password', 'true');
 
+      if (!mounted) return;
+      await offerBiometricEnrollment(context, ref, key);
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const HomeShell()),
         );
       }
     } catch (e) {
       setState(() {
-        _error = 'An error occurred. Please try again.';
+        _errorKey = 'error_try_again';
         _isLoading = false;
       });
     }
@@ -142,6 +167,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
 
   @override
   Widget build(BuildContext context) {
+    final t = ref.watch(stringsProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final strength = _strengthScore(_passwordController.text);
@@ -192,7 +218,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                       const SizedBox(height: 20),
                       // ── Title ─────────────────────────────────────
                       Text(
-                        'Create Password',
+                        t('create_password_title'),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.2,
@@ -201,7 +227,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'This password encrypts your data.\nIt cannot be recovered if forgotten.',
+                        t('create_password_warning'),
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
@@ -216,8 +242,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                         enabled: !_isLoading,
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
-                          labelText: 'Password',
-                          hintText: 'Minimum 8 characters',
+                          labelText: t('password'),
+                          hintText: t('min_6_characters'),
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -254,6 +280,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                                         ? _strengthColor(
                                             strength,
                                             colorScheme,
+                                            context.palette,
                                           )
                                         : colorScheme
                                             .surfaceContainerHighest,
@@ -272,7 +299,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                         enabled: !_isLoading,
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
-                          labelText: 'Confirm Password',
+                          labelText: t('confirm_password'),
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: confirmNotEmpty
                               ? Icon(
@@ -300,7 +327,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                       if (confirmNotEmpty && !_passwordsMatch) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'Passwords do not match',
+                          t('passwords_do_not_match'),
                           style: TextStyle(
                             color: colorScheme.error,
                             fontSize: 13,
@@ -309,7 +336,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                       ],
                       const SizedBox(height: 32),
                       // ── Error ─────────────────────────────────────
-                      if (_error != null) ...[
+                      if (_errorKey != null) ...[
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
@@ -330,7 +357,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  _error!,
+                                  t(_errorKey!),
                                   style: TextStyle(
                                     color: colorScheme.onErrorContainer,
                                     fontSize: 14,
@@ -359,7 +386,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen>
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Create & Enter'),
+                              : Text(t('create_and_enter')),
                         ),
                       ),
                     ],
