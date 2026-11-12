@@ -162,7 +162,7 @@
     <h1>Privacy Policy</h1>
     <p class="tagline">100% offline. No servers. No accounts. Nothing to collect.</p>
     <div class="meta-row">
-      <span class="meta-pill">Last updated: June 5, 2026</span>
+      <span class="meta-pill">Last updated: November 12, 2026</span>
       <span class="meta-pill">Developer: BaveSerdem</span>
     </div>
   </div>
@@ -188,18 +188,22 @@
     <p>The application does not sell, rent, share, or disclose personal data to third parties. It does not include any functionality to transmit data to external parties.</p>
 
     <h2><span class="num">3</span>Your Data and How It's Protected</h2>
-    <p>All your financial information is stored locally on your device and protected by strong encryption using a password you choose. Without your password, the data is not accessible — including to us.</p>
-    <p>The app is designed to use your device's built-in security features (Android Keystore) to protect the encryption keys.</p>
+    <p>Your financial records are stored only on your device. When you first open the app, you choose whether to protect them with a password; you can also enable this later from Settings → Security &amp; Privacy.</p>
+    <p><strong>If you enable encryption:</strong> your transactions and recurring items are stored in files encrypted with AES-256. The encryption key is derived from your password (PBKDF2-HMAC-SHA256, 100,000 iterations, with a random salt) and is not stored. The password itself is never stored; the app keeps only a verification value that cannot be reversed into the password. A short or common password can still be guessed by someone who has your device, so choose a strong one.</p>
+    <p><strong>If you skip encryption:</strong> those files are stored unencrypted. They are then protected only by Android's standard separation between apps, which does not apply on a rooted device or to anyone who can read your device's storage.</p>
+    <p>In both cases, display preferences such as language, colours and currency symbol are stored without encryption, as they are not financial data.</p>
+    <p><strong>Fingerprint unlock</strong> is optional. If you turn it on, a copy of your encryption key is kept on your device, in storage backed by the Android Keystore, so the app can open without your password. That copy is protected by your device's lock screen and by Android's app separation, not by your password. On a rooted or otherwise compromised device it could be used to open your data without your password. If that matters to you, leave fingerprint unlock off. Turning it off in Settings → Security &amp; Privacy removes the stored copy; turning it on again asks for your password.</p>
+    <p>We do not have your password, your encryption key or a copy of your data, so we cannot read, recover or reset any of them.</p>
 
     <h2><span class="num">4</span>Permissions We Use</h2>
-    <p>The app requests only what it needs to function:</p>
+    <p>The app does not request the INTERNET permission at all, so it has no ability to send or receive data over a network. It declares the following permissions:</p>
     <ul>
-      <li><strong>Biometric (fingerprint/face):</strong> To unlock the app locally. Your biometric data is handled entirely by your device's operating system and is not accessible to this app.</li>
-      <li><strong>Notifications:</strong> To remind you of upcoming subscription payments. All reminders are generated on your device.</li>
-      <li><strong>Alarm scheduling:</strong> To deliver reminders at the exact time you choose.</li>
-      <li><strong>Boot permission:</strong> To restore your reminders if the device restarts.</li>
+      <li><strong>Biometric (fingerprint/face):</strong> To offer biometric unlock. Your biometric data is handled entirely by your device's operating system and is never available to this app; the app only receives a yes-or-no answer.</li>
+      <li><strong>Notifications:</strong> To show a reminder one day before a recurring item is due. Reminders are created on your device. The reminder text (the item's name and amount) is handed to Android's notification system, which stores it on the device and may show it on the lock screen according to your notification settings. Timing is approximate: Android may delay a reminder to save battery.</li>
+      <li><strong>Boot completed:</strong> To re-register your pending reminders after the device restarts.</li>
+      <li><strong>Vibrate:</strong> Declared by the notification library, for reminder alerts.</li>
     </ul>
-    <p>No permission is used to access the internet or transmit data.</p>
+    <p>The app also opts out of Android's cloud backup and device-to-device transfer, so the system does not copy the app's data anywhere. If you change devices, use the export described in section 5.</p>
 
     <h2><span class="num">5</span>Backups</h2>
     <p>The app lets you export your data as an encrypted backup file (.vault). This file:</p>
@@ -216,7 +220,7 @@
     <ul>
       <li><strong>View:</strong> All your data is visible within the app</li>
       <li><strong>Export:</strong> Create an encrypted backup at any time</li>
-      <li><strong>Delete:</strong> Remove all data permanently from Settings → Delete All Data</li>
+      <li><strong>Delete:</strong> Settings → Security &amp; Privacy → Delete All Data. After you confirm, the app asks Android to clear all of the app's data (the same operation as "Clear storage" in the system settings) and then closes. Exported backup files are not affected.</li>
       <li><strong>Uninstall:</strong> Removing the app removes all locally stored application data from your device. Exported backup files remain under your control and are not automatically removed.</li>
     </ul>
     <p>There is no account to close and no server-side data to request deletion of.</p>
@@ -253,7 +257,7 @@
     <h2><span class="num">12</span>Contact</h2>
     <div class="contact-card">
       <div><b>Developer:</b> BaveSerdem</div>
-      <div><b>Email:</b> <a href="mailto:bave.serdem1@gmail.com">bave.serdem1@gmail.com</a></div>
+      <div><b>Email:</b> <a href="mailto:listok.kawa@gmail.com">listok.kawa@gmail.com</a></div>
       <div><b>Source:</b> <a href="https://github.com/BaveSerdem/Finance-me-Local" target="_blank" rel="noopener">github.com/BaveSerdem/Finance-me-Local</a></div>
     </div>
 
