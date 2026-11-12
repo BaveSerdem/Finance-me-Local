@@ -33,19 +33,27 @@ class SwipeToDelete extends StatelessWidget {
     required this.dismissKey,
     required this.onDismissed,
     required this.child,
+    this.confirmDismiss,
   });
 
   final Key dismissKey;
   final VoidCallback onDismissed;
   final Widget child;
 
+  /// Asked **before** the row is dismissed. Returning `false` slides the row
+  /// back. Confirming after `onDismissed` instead left a cancelled row in a
+  /// dismissed state, invisible until the list was rebuilt (M-7).
+  final Future<bool> Function()? confirmDismiss;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final confirm = confirmDismiss;
 
     return Dismissible(
       key: dismissKey,
       direction: DismissDirection.endToStart,
+      confirmDismiss: confirm == null ? null : (_) => confirm(),
       background: Container(
         alignment: AlignmentDirectional.centerEnd,
         padding: const EdgeInsetsDirectional.only(end: AppSpace.xl),

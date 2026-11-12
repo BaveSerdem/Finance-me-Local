@@ -11,6 +11,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'database_service.dart';
 
 /// Service wrapping [FlutterSecureStorage] for reading and writing
 /// sensitive local configuration (biometric status, EULA, etc.).
@@ -30,6 +31,16 @@ class SecureStorageService {
   static const String kdfSaltKey = 'kdf_salt';
   static const String biometricTokenKey = 'biometric_token';
   static const String biometricKeyDataKey = 'biometric_key_data';
+
+  /// Plain-settings copies of the salt and the HMAC verifier (M-4).
+  ///
+  /// Neither is secret: the salt only makes the derivation unique and the
+  /// verifier is an HMAC that cannot be inverted into the key. Keeping a copy
+  /// outside the Keystore-backed store means a lost or reset Keystore no
+  /// longer turns a known password into a permanently locked vault. Key
+  /// material is never mirrored.
+  static const String passwordVerifierMirrorKey = 'password_verifier_mirror';
+  static const String kdfSaltMirrorKey = 'kdf_salt_mirror';
 
   // ---------------------------------------------------------------------------
   // Biometric authentication flag
@@ -71,23 +82,68 @@ class SecureStorageService {
   // ---------------------------------------------------------------------------
 
   /// Saves the HMAC-SHA256 password verifier (base64-encoded).
+  ///
+  /// The mirror is written first: if the process dies between the two writes
+  /// the secure copy is still the old one and wins on read, which is the
+  /// consistent state; a mirror that is newer than the secure copy is only
+  /// ever consulted once the secure copy is gone.
   Future<void> savePasswordVerifier(String verifier) async {
+    await _writeMirror(passwordVerifierMirrorKey, verifier);
     await _storage.write(key: passwordVerifierKey, value: verifier);
   }
 
   /// Returns the stored password verifier, or null if not set.
   Future<String?> getPasswordVerifier() async {
-    return _storage.read(key: passwordVerifierKey);
+    return await _readSecure(passwordVerifierKey) ??
+        _readMirror(passwordVerifierMirrorKey);
   }
 
   /// Saves the KDF salt (base64-encoded).
   Future<void> saveKdfSalt(String salt) async {
+    await _writeMirror(kdfSaltMirrorKey, salt);
     await _storage.write(key: kdfSaltKey, value: salt);
   }
 
   /// Returns the stored KDF salt, or null if not set.
   Future<String?> getKdfSalt() async {
-    return _storage.read(key: kdfSaltKey);
+    return await _readSecure(kdfSaltKey) ?? _readMirror(kdfSaltMirrorKey);
+  }
+
+  /// Back-fills the mirrors for a vault created before they existed. Called
+  /// after a successful password verification, so the values are known good.
+  Future<void> mirrorIdentityIfMissing({
+    required String verifier,
+    required String salt,
+  }) async {
+    if (_readMirror(passwordVerifierMirrorKey) == null) {
+      await _writeMirror(passwordVerifierMirrorKey, verifier);
+    }
+    if (_readMirror(kdfSaltMirrorKey) == null) {
+      await _writeMirror(kdfSaltMirrorKey, salt);
+    }
+  }
+
+  /// A Keystore that has been wiped can make the plugin throw rather than
+  /// return null; either way the mirror is the fallback.
+  Future<String?> _readSecure(String key) async {
+    try {
+      return await _storage.read(key: key);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _readMirror(String key) {
+    final db = DatabaseService();
+    if (!db.isInitialized) return null;
+    final value = db.settingsBox.get(key);
+    return (value == null || value.isEmpty) ? null : value;
+  }
+
+  Future<void> _writeMirror(String key, String value) async {
+    final db = DatabaseService();
+    if (!db.isInitialized) return;
+    await db.settingsBox.put(key, value);
   }
 
   // ---------------------------------------------------------------------------

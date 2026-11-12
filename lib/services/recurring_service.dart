@@ -27,6 +27,18 @@ class RecurringService {
     final db = DatabaseService();
     final subs = db.subscriptionsBox.values.toList();
 
+    // Every transaction an earlier run already generated, keyed by the
+    // subscription and the due moment it was generated for. The transaction
+    // write and the cursor save below are two separate writes, so a kill
+    // between them used to repeat the last transaction on the next launch;
+    // consulting this set first makes the loop idempotent (L-4). Hand-entered
+    // transactions carry no `subscriptionId` and are never matched.
+    final generated = <String>{};
+    for (final t in db.transactionsBox.values) {
+      final sid = t.subscriptionId;
+      if (sid != null) generated.add(_generatedKey(sid, t.date));
+    }
+
     for (final sub in subs) {
       if (sub.isPaused) continue;
       try {
@@ -36,7 +48,7 @@ class RecurringService {
         // The anchor day-of-month the cycle must always return to. Clamped
         // only when the target month is too short — a Jan-31 bill lands on
         // Feb 28 but is back on 31 in March, never stuck at 28.
-        final anchorDay = sub.startDate.day;
+        final anchorDay = anchorDayFor(sub.nextDueDate, sub.startDate);
 
         // A restored or hand-edited record can hold a next-due date earlier
         // than the subscription's start. Never generate charges for cycles
@@ -45,21 +57,25 @@ class RecurringService {
 
         var cycles = 0;
         while (!sub.nextDueDate.isAfter(now) && cycles < _maxCatchUpCycles) {
-          final txn = TransactionModel(
-            title: sub.name,
-            amount: sub.amount,
-            date: sub.nextDueDate,
-            // `!= 'income'` rather than `== 'expense'`, so an unrecognised type
-            // books as an expense. The previous form defaulted the unknown case
-            // to *income* while `balance_provider` defaulted it to expense —
-            // the same record moved the two headline numbers in opposite
-            // directions.
-            isExpense: sub.type != 'income',
-            subscriptionId: sub.id,
-          )..isRecurring = true;
-          await db.transactionsBox.add(txn);
+          final key = _generatedKey(sub.id, sub.nextDueDate);
+          if (!generated.contains(key)) {
+            final txn = TransactionModel(
+              title: sub.name,
+              amount: sub.amount,
+              date: sub.nextDueDate,
+              // `!= 'income'` rather than `== 'expense'`, so an unrecognised
+              // type books as an expense. The previous form defaulted the
+              // unknown case to *income* while `balance_provider` defaulted
+              // it to expense — the same record moved the two headline
+              // numbers in opposite directions.
+              isExpense: sub.type != 'income',
+              subscriptionId: sub.id,
+            )..isRecurring = true;
+            await db.transactionsBox.add(txn);
+            generated.add(key);
+          }
 
-          sub.nextDueDate = _nextBillingDate(
+          sub.nextDueDate = nextBillingDate(
             sub.nextDueDate,
             sub.billingCycle,
             anchorDay,
@@ -79,11 +95,12 @@ class RecurringService {
         // backup restores stale dates) would otherwise mean thousands of
         // awaited writes blocking the unlock screen. Past the cap the cursor is
         // rolled forward without creating anything.
-        while (!sub.nextDueDate.isAfter(now)) {
-          sub.nextDueDate = _nextBillingDate(
+        if (!sub.nextDueDate.isAfter(now)) {
+          sub.nextDueDate = rollForward(
             sub.nextDueDate,
             sub.billingCycle,
             anchorDay,
+            now,
           );
           changed = true;
         }
@@ -105,25 +122,62 @@ class RecurringService {
     }
   }
 
+  static String _generatedKey(String subscriptionId, DateTime due) =>
+      '$subscriptionId|${due.millisecondsSinceEpoch}';
+
+  /// The day-of-month a monthly-family cycle returns to.
+  ///
+  /// Taken from [nextDueDate], so a hand-edited next-due date sticks for
+  /// every following cycle instead of snapping back to the start day after
+  /// one cycle (L-2). The one exception is a next-due date that is the last
+  /// day of a month shorter than the start day — that is a clamped Jan-31
+  /// bill sitting on Feb 28, and it must return to the 31st.
+  static int anchorDayFor(DateTime nextDueDate, DateTime startDate) {
+    final lastDayOfMonth =
+        DateTime(nextDueDate.year, nextDueDate.month + 1, 0).day;
+    if (nextDueDate.day == lastDayOfMonth && startDate.day > nextDueDate.day) {
+      return startDate.day;
+    }
+    return nextDueDate.day;
+  }
+
+  /// The first due date strictly after [now], stepping from [due] by [cycle]
+  /// without generating anything. Used when a paused item is resumed (M-1)
+  /// and when the catch-up cap is exceeded.
+  static DateTime rollForward(
+    DateTime due,
+    String cycle,
+    int anchorDay,
+    DateTime now,
+  ) {
+    var next = due;
+    while (!next.isAfter(now)) {
+      next = nextBillingDate(next, cycle, anchorDay);
+    }
+    return next;
+  }
+
   /// The next billing date for a cycle.
   ///
-  /// Daily/weekly-family cycles add a fixed [Duration] — those spans are short
-  /// enough that DST shifts are immaterial. Monthly-family and yearly cycles
-  /// are built calendar-first with `DateTime(year, month, day)` around the
-  /// [anchorDay] of month, so a month-end day returns to itself in a longer
-  /// month instead of being carried forward clamped.
-  static DateTime _nextBillingDate(
+  /// Every cycle is built calendar-first. The weekly family used to add a
+  /// `Duration` of whole days, which is an absolute span: across a
+  /// daylight-saving change the result lands an hour off, and for a date
+  /// stored at local midnight that hour is the previous calendar day (M-2).
+  /// Monthly-family and yearly cycles are built around the [anchorDay] of
+  /// month, so a month-end day returns to itself in a longer month instead of
+  /// being carried forward clamped.
+  static DateTime nextBillingDate(
     DateTime current,
     String cycle,
     int anchorDay,
   ) {
     switch (cycle) {
       case 'Weekly':
-        return current.add(const Duration(days: 7));
+        return _addDays(current, 7);
       case 'Bi-Weekly':
-        return current.add(const Duration(days: 14));
+        return _addDays(current, 14);
       case '3 Weeks':
-        return current.add(const Duration(days: 21));
+        return _addDays(current, 21);
       case 'Monthly':
         return _addMonthsClamped(current, 1, anchorDay);
       case '3 Months':
@@ -138,6 +192,20 @@ class RecurringService {
         return _addMonthsClamped(current, 1, anchorDay);
     }
   }
+
+  /// Adds calendar days, keeping the wall-clock time. `DateTime` normalises
+  /// an overflowing day into the following month, so this is DST-safe where
+  /// `add(Duration(days: n))` is not.
+  static DateTime _addDays(DateTime date, int days) => DateTime(
+        date.year,
+        date.month,
+        date.day + days,
+        date.hour,
+        date.minute,
+        date.second,
+        date.millisecond,
+        date.microsecond,
+      );
 
   static DateTime _addMonthsClamped(
     DateTime date,

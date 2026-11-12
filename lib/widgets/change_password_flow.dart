@@ -194,11 +194,16 @@ Future<void> _performPasswordChange(
       if (!boxesAlreadyOpen) {
         await db.openBoxes(oldKey);
       }
-      await db.reEncryptBoxes(oldKey, newKey);
-
+      // The new salt and verifier travel with the re-encryption and are
+      // committed by it only once the re-encrypted files are in place, so a
+      // kill at any point leaves exactly one password valid (C-1 / H-1).
       final newVerifier = keyService.computeVerifier(newKey);
-      await secureStorage.savePasswordVerifier(base64Encode(newVerifier));
-      await secureStorage.saveKdfSalt(base64Encode(newSalt));
+      await db.reEncryptBoxes(
+        oldKey,
+        newKey,
+        newSaltB64: base64Encode(newSalt),
+        newVerifierB64: base64Encode(newVerifier),
+      );
 
       final biometricEnabled =
           await BiometricService(

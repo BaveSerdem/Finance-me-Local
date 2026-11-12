@@ -22,13 +22,17 @@ class AdjustedBalanceNotifier extends Notifier<double> {
   @override
   double build() => _load();
 
+  // Read from and written to the encrypted `vault_settings` box, not the
+  // plain settings box: this is a money amount, and the plain box is readable
+  // by anyone with the file (M-3). `DatabaseService.openBoxes` migrates a
+  // value stored under the old plain key on first open.
   double _load() {
-    final val = DatabaseService().settingsBox.get(_key);
+    final val = DatabaseService().vaultSettingsBox.get(_key);
     return double.tryParse(val ?? '') ?? 0;
   }
 
   Future<void> setBalance(double value) async {
-    await DatabaseService().settingsBox.put(_key, value.toString());
+    await DatabaseService().vaultSettingsBox.put(_key, value.toString());
     state = value;
   }
 

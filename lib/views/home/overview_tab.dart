@@ -37,6 +37,8 @@ class OverviewTab extends ConsumerWidget {
     required this.onAddExpense,
     required this.onEditTransaction,
     required this.onDeleteTransaction,
+    required this.onConfirmDeleteTransaction,
+    required this.onDeleteTransactionConfirmed,
     required this.onOpenRecurring,
   });
 
@@ -44,6 +46,10 @@ class OverviewTab extends ConsumerWidget {
   final VoidCallback onAddExpense;
   final void Function(TransactionModel) onEditTransaction;
   final void Function(TransactionModel) onDeleteTransaction;
+
+  /// Swipe-to-delete asks first and deletes second; see `TransactionRow`.
+  final Future<bool> Function(TransactionModel) onConfirmDeleteTransaction;
+  final void Function(TransactionModel) onDeleteTransactionConfirmed;
 
   /// Switches the shell to the Recurring destination. Taking a callback rather
   /// than pushing a route is what removes the duplicated recurring list: there
@@ -125,6 +131,10 @@ class OverviewTab extends ConsumerWidget {
                       dates: dates,
                       onEdit: () => onEditTransaction(transaction),
                       onDelete: () => onDeleteTransaction(transaction),
+                      onConfirmDelete: () =>
+                          onConfirmDeleteTransaction(transaction),
+                      onDeleteConfirmed: () =>
+                          onDeleteTransactionConfirmed(transaction),
                     ),
                 };
               },

@@ -14,7 +14,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../localization/locale_provider.dart';
 import '../services/database_service.dart';
 import '../services/key_service.dart';
-import '../services/secure_storage_service.dart';
 import '../widgets/biometric_enrollment.dart';
 import 'app_dialogs.dart';
 import 'app_snack.dart';
@@ -54,25 +53,23 @@ Future<void> showEnableEncryptionFlow(
   final progressContext = _showProgressDialog(context, ref);
 
   try {
-    final secureStorage = SecureStorageService();
     final keyService = KeyService();
     // Never trust a stale cached key here — same rule as change-password and
     // first-run creation.
     keyService.clearCache();
     final (newKey, newSalt) = await keyService.deriveNewKey(password);
 
-    // Re-encrypt first. Only after it succeeds without throwing do we swap
-    // the identity and the routing flags, so a mid-flight failure leaves the
-    // boxes exactly as they were: fully unencrypted.
-    await DatabaseService().enableEncryption(newKey);
-
+    // The identity (salt, verifier) and the routing flags
+    // (`encryption_enabled`, `has_password`) are committed by the
+    // re-encryption itself, and only once the re-encrypted files are in
+    // place. A kill before that point is rolled back on the next launch and
+    // the app stays unencrypted; a kill after it is rolled forward (C-1/H-1).
     final verifier = keyService.computeVerifier(newKey);
-    await secureStorage.savePasswordVerifier(base64Encode(verifier));
-    await secureStorage.saveKdfSalt(base64Encode(newSalt));
-
-    final db = DatabaseService();
-    await db.setEncryptionChoice(true);
-    await db.settingsBox.put('has_password', 'true');
+    await DatabaseService().enableEncryption(
+      newKey,
+      newSaltB64: base64Encode(newSalt),
+      newVerifierB64: base64Encode(verifier),
+    );
 
     keyService.clearCache();
 

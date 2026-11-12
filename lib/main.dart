@@ -48,6 +48,16 @@ void main() async {
 
     await DatabaseService().initialize();
 
+    // A password change or encryption enable that was interrupted by a kill
+    // is rolled back or rolled forward here, before any data box is opened.
+    // A failure must not take the whole app down: `openBoxes` retries the
+    // recovery, so the unlock screen will report it per attempt instead.
+    try {
+      await DatabaseService().recoverReencryption();
+    } catch (e) {
+      debugPrint('main: re-encryption recovery failed: $e');
+    }
+
     await NotificationService().initialize();
 
     // Android 13+ gates notifications behind a runtime permission. Without this

@@ -56,6 +56,8 @@ class TransactionRow extends ConsumerWidget {
     required this.dates,
     required this.onEdit,
     required this.onDelete,
+    required this.onConfirmDelete,
+    required this.onDeleteConfirmed,
   });
 
   final TransactionModel transaction;
@@ -63,7 +65,15 @@ class TransactionRow extends ConsumerWidget {
   final MoneyFormat money;
   final AppDateFormat dates;
   final VoidCallback onEdit;
+
+  /// Long-press path: asks, then deletes.
   final VoidCallback onDelete;
+
+  /// Swipe path, split in two so the question is asked before the row is
+  /// dismissed (M-7): [onConfirmDelete] returns the user's answer and
+  /// [onDeleteConfirmed] deletes without asking again.
+  final Future<bool> Function() onConfirmDelete;
+  final VoidCallback onDeleteConfirmed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -79,7 +89,8 @@ class TransactionRow extends ConsumerWidget {
           onDelete: onDelete,
           child: SwipeToDelete(
             dismissKey: ValueKey(transaction.key),
-            onDismissed: onDelete,
+            confirmDismiss: onConfirmDelete,
+            onDismissed: onDeleteConfirmed,
             child: Container(
               padding: const EdgeInsets.symmetric(
                 vertical: AppSpace.md,

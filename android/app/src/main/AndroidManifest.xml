@@ -1,12 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Every reminder is scheduled inexactly (inexactAllowWhileIdle), so
+         SCHEDULE_EXACT_ALARM was declared without being used. -->
+    <!-- No OS backup of any kind: allowBackup covers Android 6-11 cloud
+         backup, fullBackupContent the pre-12 auto-backup rules, and
+         dataExtractionRules both cloud backup and device-to-device transfer
+         on Android 12+. The vault must never leave the device through the
+         system, encrypted or not. -->
     <application
         android:label="Finance me Local"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

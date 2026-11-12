@@ -193,6 +193,13 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
         return;
       }
 
+      // A vault created before the plain-settings mirrors existed gets them
+      // now, from values the password just proved correct (M-4).
+      await secureStorage.mirrorIdentityIfMissing(
+        verifier: storedVerifierB64,
+        salt: storedSaltB64,
+      );
+
       await db.openBoxes(derivedKey);
 
       await RecurringService.processDueItems();
@@ -434,7 +441,10 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen>
                     ],
                     const SizedBox(height: 20),
                     // ── Change password (encrypted mode only) ────────
-                    if (DatabaseService().getEncryptionChoice() == true) ...[
+                    // `!= false`, not `== true`: users from before the
+                    // encryption-choice screen have no stored choice and are
+                    // encrypted (L-7).
+                    if (DatabaseService().getEncryptionChoice() != false) ...[
                       TextButton(
                         onPressed: () async {
                           await showChangePasswordFlow(

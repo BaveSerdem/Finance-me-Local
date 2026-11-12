@@ -218,6 +218,17 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
             }
           }
           await _biometricService.setBiometricLoginEnabled(value);
+          if (!value) {
+            // Switching the lock off must also remove the on-device copy of
+            // the vault key, or the privacy policy's statement that it does
+            // would be untrue. Re-enabling asks for the password and derives
+            // a fresh copy.
+            try {
+              final storage = SecureStorageService();
+              await storage.deleteBiometricKeyData();
+              await storage.deleteBiometricToken();
+            } catch (_) {}
+          }
           setState(() => _biometricEnabled = value);
         },
       ),
@@ -471,6 +482,7 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
   }
 
   Future<void> _confirmDelete() async {
+    final t = ref.read(stringsProvider);
     final tf = ref.read(stringsFormatProvider);
     setState(() => _deleting = true);
 
@@ -478,15 +490,18 @@ class _DeleteAllDataTileState extends ConsumerState<_DeleteAllDataTile> {
       // The OS clears the entire app data directory and kills the process, so
       // no per-box/per-key manual deletion is needed here. If the call
       // succeeds the process dies shortly after — code below will likely not
-      // execute, which is expected. Only a PlatformException means the wipe
-      // didn't start and the user must be told.
+      // execute, which is expected. A PlatformException means the wipe
+      // didn't start, or the OS refused it (L-1), and the user must be told.
       await AppResetService.clearAllAppData();
     } on PlatformException catch (e) {
       if (!mounted) return;
+      setState(() => _deleting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            tf('delete_all_failed', {'message': e.message ?? ''}),
+            e.code == AppResetService.refusedCode
+                ? t('delete_all_os_refused')
+                : tf('delete_all_failed', {'message': e.message ?? ''}),
           ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),

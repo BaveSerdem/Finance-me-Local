@@ -88,6 +88,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               onAddExpense: () => _openTransactionSheet(forceIsExpense: true),
               onEditTransaction: (txn) => _openTransactionSheet(existing: txn),
               onDeleteTransaction: _confirmDeleteTransaction,
+              onConfirmDeleteTransaction: _askDeleteTransaction,
+              onDeleteTransactionConfirmed: _deleteTransaction,
               onOpenRecurring: () => _goTo(HomeDestination.recurring),
             ),
             RecurringTab(key: _recurringKey),
@@ -179,9 +181,16 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   }
 
   Future<void> _confirmDeleteTransaction(TransactionModel transaction) async {
-    final t = ref.read(stringsProvider);
+    final confirmed = await _askDeleteTransaction(transaction);
+    if (!confirmed || !mounted) return;
+    await _deleteTransaction(transaction);
+  }
 
-    final confirmed = await showDestructiveConfirmDialog(
+  /// The question alone. Swipe-to-delete asks it through `confirmDismiss`,
+  /// before the row is dismissed, so a "cancel" slides the row back (M-7).
+  Future<bool> _askDeleteTransaction(TransactionModel transaction) {
+    final t = ref.read(stringsProvider);
+    return showDestructiveConfirmDialog(
       context,
       title: t('delete_record'),
       message: '${t('delete_confirm')} "${transaction.title}"?\n\n'
@@ -189,8 +198,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       confirmLabel: t('delete'),
       cancelLabel: t('cancel'),
     );
-    if (!confirmed || !mounted) return;
+  }
 
+  Future<void> _deleteTransaction(TransactionModel transaction) async {
+    final t = ref.read(stringsProvider);
     try {
       await ref
           .read(transactionProvider.notifier)

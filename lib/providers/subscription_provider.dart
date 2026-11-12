@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/subscription_model.dart';
 import '../services/database_service.dart';
 import '../services/notification_service.dart';
+import '../services/recurring_service.dart';
 
 final subscriptionProvider =
     NotifierProvider<SubscriptionNotifier, List<SubscriptionModel>>(
@@ -85,6 +86,11 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
     bool isPaused = false,
     bool notifyDayBefore = true,
   }) async {
+    // Resumed through the form without touching the due date: same rule as
+    // [togglePause]. A due date the user deliberately changed is respected.
+    final resumedWithSameDueDate = existing.isPaused &&
+        !isPaused &&
+        existing.nextDueDate == nextDueDate;
     existing.name = name;
     existing.amount = amount;
     existing.type = type;
@@ -93,6 +99,7 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
     existing.nextDueDate = nextDueDate;
     existing.isPaused = isPaused;
     existing.notifyDayBefore = notifyDayBefore;
+    if (resumedWithSameDueDate) _skipCyclesMissedWhilePaused(existing);
     try {
       await existing.save();
     } catch (_) {
@@ -112,6 +119,7 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
 
   Future<void> togglePause(SubscriptionModel sub) async {
     sub.isPaused = !sub.isPaused;
+    if (!sub.isPaused) _skipCyclesMissedWhilePaused(sub);
     try {
       await sub.save();
     } catch (_) {
@@ -126,5 +134,21 @@ class SubscriptionNotifier extends Notifier<List<SubscriptionModel>> {
         await NotificationService().scheduleNotification(sub);
       }
     } catch (_) {}
+  }
+
+  /// A paused item keeps the due date it had when it was paused. Resuming it
+  /// unchanged would hand that stale date to the catch-up loop, which would
+  /// then book one transaction for every cycle that elapsed while paused —
+  /// charges that never happened (M-1). Roll the cursor to the first due date
+  /// after now instead, creating nothing.
+  void _skipCyclesMissedWhilePaused(SubscriptionModel sub) {
+    final now = DateTime.now();
+    if (sub.nextDueDate.isAfter(now)) return;
+    sub.nextDueDate = RecurringService.rollForward(
+      sub.nextDueDate,
+      sub.billingCycle,
+      RecurringService.anchorDayFor(sub.nextDueDate, sub.startDate),
+      now,
+    );
   }
 }

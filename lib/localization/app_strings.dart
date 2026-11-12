@@ -316,13 +316,22 @@ class AppStrings {
       'ku': 'Şîn û pirteqalî li şûna kesk û sor',
       'tr': 'Yeşil ve kırmızı yerine mavi ve turuncu',
     },
+    // Honest about the trade-off (M-5): the vault key is kept on the phone
+    // under the phone's own lock, not under the user's password.
     'biometric_lock_subtitle': {
-      'en': 'Unlock with your fingerprint instead of typing',
-      'ar': 'افتح ببصمتك بدل كتابة كلمة المرور',
-      'ru': 'Разблокировка отпечатком вместо ввода пароля',
-      'de': 'Mit Fingerabdruck statt Eingabe entsperren',
-      'ku': 'Bi şopa tiliyê veke, ne bi nivîsandinê',
-      'tr': 'Parola yazmak yerine parmak iziyle aç',
+      'en': 'Unlock with your fingerprint. Keeps a copy of your vault key on '
+          'this phone, protected by its lock screen, not your password.',
+      'ar': 'افتح ببصمتك. يحفظ نسخة من مفتاح الخزنة على هذا الهاتف محمية '
+          'بقفل شاشته لا بكلمة مرورك.',
+      'ru': 'Разблокировка отпечатком. Копия ключа хранилища хранится на '
+          'телефоне под защитой его экрана блокировки, а не вашего пароля.',
+      'de': 'Mit Fingerabdruck entsperren. Speichert eine Kopie des '
+          'Tresorschlüssels auf diesem Telefon, geschützt durch dessen '
+          'Bildschirmsperre, nicht durch Ihr Passwort.',
+      'ku': 'Bi şopa tiliyê veke. Kopiyek ji kilîta xezîneyê li ser vê '
+          'telefonê tomar dike, bi kilîta ekranê tê parastin, ne bi şîfreya te.',
+      'tr': 'Parmak iziyle açın. Kasa anahtarının bir kopyasını bu telefonda, '
+          'parolanızla değil ekran kilidiyle korunmuş olarak saklar.',
     },
     'export_backup_subtitle': {
       'en': 'Save an encrypted copy of your data',
@@ -1820,6 +1829,26 @@ class AppStrings {
       'ku': 'Daneyên nehatin jêbirin: {message}. Ji kerema xwe careke din biceribîne.',
       'tr': 'Veriler silinemedi: {message}. Lütfen tekrar deneyin.',
     },
+    // The OS accepted the wipe call but returned false (L-1).
+    'delete_all_os_refused': {
+      'en': 'The system refused to clear the app data. Nothing was deleted. '
+          'Check whether a device policy restricts clearing app data, then '
+          'try again.',
+      'ar': 'رفض النظام مسح بيانات التطبيق. لم يُحذف شيء. تحقق مما إذا كانت '
+          'سياسة الجهاز تمنع مسح بيانات التطبيقات ثم حاول مجدداً.',
+      'ru': 'Система отказалась очистить данные приложения. Ничего не удалено. '
+          'Проверьте, не запрещает ли политика устройства очистку данных '
+          'приложений, и попробуйте снова.',
+      'de': 'Das System hat das Löschen der App-Daten abgelehnt. Es wurde '
+          'nichts gelöscht. Prüfen Sie, ob eine Geräterichtlinie das Löschen '
+          'von App-Daten einschränkt, und versuchen Sie es erneut.',
+      'ku': 'Pergalê paqijkirina daneyên sepanê red kir. Tiştek nehat jêbirin. '
+          'Kontrol bike ka polîtîkayek cîhazê paqijkirina daneyên sepanan '
+          'asteng dike, paşê dîsa biceribîne.',
+      'tr': 'Sistem uygulama verilerini temizlemeyi reddetti. Hiçbir şey '
+          'silinmedi. Bir cihaz ilkesinin uygulama verisi temizlemeyi '
+          'kısıtlayıp kısıtlamadığını kontrol edip tekrar deneyin.',
+    },
 
     // ---- Security: identity & password ----
     'incorrect_password': {
@@ -2153,22 +2182,38 @@ class AppStrings {
       'ku': 'Vekirina şopa tîlê zêde bike',
       'tr': 'Parmak izi ile açmayı ekle',
     },
+    // Honest about the trade-off (M-5). A Keystore-bound key would remove it;
+    // until then the user must be able to decline with the facts in hand.
     'enable_biometric_explanation': {
       'en':
-          'We will now enable your fingerprint so you can open the app '
-          'quickly without typing your password.',
-      'ar': 'سنقوم الآن بتفعيل بصمتك لتتمكن من فتح التطبيق بسرعة دون كتابة كلمة '
-          'المرور.',
-      'ru': 'Теперь включим ваш отпечаток пальца, чтобы вы могли открывать '
-          'приложение быстро, без ввода пароля.',
+          'Fingerprint unlock stores a copy of your vault key on this phone, '
+          'protected by the phone’s lock screen instead of your password. '
+          'A rooted or compromised phone could then open the vault without '
+          'your password. Leave it off if that matters to you.',
+      'ar': 'يحفظ الفتح بالبصمة نسخة من مفتاح خزنتك على هذا الهاتف، محمية '
+          'بقفل شاشة الهاتف لا بكلمة مرورك. هاتف بصلاحيات الجذر أو مخترق '
+          'يمكنه عندها فتح الخزنة دون كلمة مرورك. اتركه معطلاً إن كان هذا يهمك.',
+      'ru': 'При входе по отпечатку копия ключа хранилища сохраняется на этом '
+          'телефоне и защищена экраном блокировки телефона, а не вашим '
+          'паролем. На рутованном или взломанном телефоне хранилище можно '
+          'открыть без пароля. Не включайте, если это для вас важно.',
       'de':
-          'Wir aktivieren jetzt Ihren Fingerabdruck, damit Sie die App schnell '
-          'ohne Passwort öffnen können.',
+          'Die Fingerabdruck-Freischaltung speichert eine Kopie Ihres '
+          'Tresorschlüssels auf diesem Telefon, geschützt durch die '
+          'Bildschirmsperre des Telefons statt durch Ihr Passwort. Auf einem '
+          'gerooteten oder kompromittierten Telefon ließe sich der Tresor '
+          'dann ohne Ihr Passwort öffnen. Lassen Sie es aus, wenn Ihnen das '
+          'wichtig ist.',
       'ku':
-          'Em ê niha şopa tîlê te çalak bikin da ku tu bikarî app bê şîfre '
-          'zû vekî.',
-      'tr': 'Şimdi parmağınızı etkinleştireceğiz, böylece parolanızı yazmadan '
-          'uygulamayı hızlıca açabilirsiniz.',
+          'Vekirina bi şopa tiliyê kopiyek ji kilîta xezîneya te li ser vê '
+          'telefonê tomar dike, ku bi kilîta ekrana telefonê tê parastin, ne '
+          'bi şîfreya te. Telefonek root-kirî an jî ketî dikare xezîneyê bê '
+          'şîfreya te veke. Heke ev ji te re girîng be, wê girtî bihêle.',
+      'tr': 'Parmak iziyle açma, kasa anahtarınızın bir kopyasını bu telefonda '
+          'saklar; bu kopya parolanızla değil telefonun ekran kilidiyle '
+          'korunur. Root edilmiş veya ele geçirilmiş bir telefonda kasa '
+          'parolanız olmadan açılabilir. Bu sizin için önemliyse kapalı '
+          'bırakın.',
     },
     'enable_biometric_ok': {
       'en': 'Enable',
