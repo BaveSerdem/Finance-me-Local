@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0e2a22">
+<meta name="description" content="Privacy Policy for Finance me Local — an offline personal finance and subscription tracker with no servers, no accounts and nothing to collect.">
+<title>Privacy Policy — Finance me Local</title>
+<link rel="icon" type="image/png" href="logo.png">
+<style>
+  /*
+    The page borrows the visual language of the app's own mark: banknote
+    engraving. The masthead is a note of denomination zero; the policy below
+    it is set as a ledger. No web fonts, no scripts, no third-party requests.
+  */
+  :root{
+    --green:       #1b4638;
+    --green-deep:  #0e2a22;
+    --bone:        #ece5d2;   /* the mark's paper, used here as ink on green */
+
+    --paper:       #f7f8f5;
+    --paper-2:     #eceee8;
+    --ink:         #121a16;
+    --sub:         #47544e;
+    --faint:       #76827c;
+    --rule:        #cdd4ce;
+    --accent:      #1b4638;
+    --hi:          #23417c;   /* highlight: ink blue, like a note's serial number */
+    --red:         #c1121f;   /* the one warning on the page */
+
+    --mono:    ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+    --sans:    "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --display: "Bodoni 72", "Bodoni MT", Didot, "Didot LT STD", "Playfair Display", Georgia, "Times New Roman", serif;
+
+    --band-on-green: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='22' viewBox='0 0 60 22'%3E%3Cg fill='none' stroke='%23ece5d2' stroke-width='.55'%3E%3Cpath id='w' d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0'/%3E%3Cpath d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0' transform='translate(7.5)'/%3E%3Cpath d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0' transform='translate(15)'/%3E%3Cpath d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0' transform='translate(22.5)'/%3E%3Cpath d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0' transform='translate(30)'/%3E%3Cpath d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0' transform='translate(37.5)'/%3E%3Cpath d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0' transform='translate(45)'/%3E%3Cpath d='M-90 11q15-19 30 0t30 0 30 0 30 0 30 0 30 0' transform='translate(52.5)'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:   #0b1310;
+      --paper-2: #111c18;
+      --ink:     #e7ece7;
+      --sub:     #a6b3ac;
+      --faint:   #74817a;
+      --rule:    #25342d;
+      --accent:  #9ccdb6;
+      --hi:      #a9c2f5;
+      --red:     #ff6b6b;
+    }
+  }
+
+  *, *::before, *::after{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  body{
+    margin:0;
+    font-family:var(--sans);
+    font-size:1rem;
+    line-height:1.65;
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  img, svg{ display:block; max-width:100%; }
+  a{ color:var(--hi); text-decoration-thickness:1px; text-underline-offset:.2em; }
+  a:hover{ text-decoration-thickness:2px; }
+  :focus-visible{ outline:2px solid var(--hi); outline-offset:3px; }
+
+  .skip{
+    position:absolute; left:12px; top:-60px; z-index:20;
+    padding:10px 14px; background:var(--ink); color:var(--paper);
+    font:600 .8rem/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; text-decoration:none;
+  }
+  .skip:focus{ top:12px; }
+
+  /* Reading progress, where the browser can drive it from scroll alone. */
+  .progress{ display:none; }
+  @supports (animation-timeline: scroll()){
+    .progress{
+      display:block; position:fixed; inset:0 0 auto 0; height:3px; z-index:10;
+      background:var(--hi); transform-origin:0 50%; transform:scaleX(0);
+      animation:progress linear both; animation-timeline:scroll(root);
+    }
+    @keyframes progress{ to{ transform:scaleX(1); } }
+  }
+
+  /* ───────────── The note ───────────── */
+  .note{
+    position:relative; isolation:isolate; overflow:hidden;
+    color:var(--bone);
+    background:
+      repeating-linear-gradient(0deg, rgba(236,229,210,.05) 0 1px, transparent 1px 4px),
+      radial-gradient(120% 150% at 78% 46%, #22594747 0%, transparent 55%),
+      linear-gradient(100deg, #0b241d 0%, #143e31 52%, #0c2720 100%);
+  }
+  .note__inner{
+    position:relative;
+    max-width:1180px; margin:0 auto;
+    padding:clamp(18px,2.6vw,30px);
+  }
+  /* The double engraved frame. */
+  .note__frame{
+    position:relative;
+    border:1px solid rgba(236,229,210,.62);
+    outline:1px solid rgba(236,229,210,.28); outline-offset:5px;
+    margin:6px;
+  }
+  .micro{
+    overflow:hidden; white-space:nowrap;
+    font:600 6px/1 var(--mono); letter-spacing:.34em; text-transform:uppercase;
+    padding:7px 0 6px; color:rgba(236,229,210,.6);
+    border-bottom:1px solid rgba(236,229,210,.3);
+    user-select:none;
+  }
+  .micro--foot{ border-bottom:0; border-top:1px solid rgba(236,229,210,.3); }
+
+  .note__body{
+    position:relative;
+    display:grid; grid-template-columns:auto minmax(0,1fr) auto;
+    align-items:center; gap:clamp(20px,4vw,56px);
+    padding:clamp(34px,5.5vw,68px) clamp(46px,6vw,84px);
+  }
+
+  .corner{
+    position:absolute; width:30px; height:30px;
+    display:grid; place-items:center;
+    font:400 1.05rem/1 var(--display);
+    border:1px solid rgba(236,229,210,.55);
+    color:var(--bone);
+  }
+  .corner--tl{ top:10px; left:10px; }   .corner--tr{ top:10px; right:10px; }
+  .corner--bl{ bottom:10px; left:10px; } .corner--br{ bottom:10px; right:10px; }
+
+  /* The rosette is centred on the numeral, so the zero sits in its eye. */
+  .denom__coin{ position:relative; display:block; }
+  .guilloche{
+    position:absolute; z-index:-1;
+    left:50%; top:50%;
+    width:clamp(420px,52vw,700px); max-width:none; aspect-ratio:1;
+    translate:-50% -50%;
+    color:rgba(236,229,210,.24);
+    animation:turn 240s linear infinite;
+  }
+  @keyframes turn{ to{ rotate:360deg; } }
+
+  .medallion{
+    /* A rounded square, like the mark itself. The image is enlarged so its own
+       frame and margin fall outside the window and only the mark shows. */
+    width:clamp(84px,11vw,132px); aspect-ratio:1; border-radius:27%;
+    overflow:hidden; background:var(--bone);
+    box-shadow:
+      0 0 0 3px var(--green-deep),
+      0 0 0 4px rgba(236,229,210,.85),
+      0 0 0 9px var(--green-deep),
+      0 0 0 10px rgba(236,229,210,.45);
+  }
+  .medallion img{ width:100%; height:100%; object-fit:cover; scale:1.62; }
+
+  .eyebrow{
+    margin:0 0 14px;
+    font:600 .7rem/1.2 var(--mono); letter-spacing:.26em; text-transform:uppercase;
+    color:rgba(236,229,210,.78);
+  }
+  h1{
+    margin:0;
+    font:400 clamp(2.5rem,6.4vw,4.9rem)/.95 var(--display);
+    letter-spacing:-.012em;
+    color:var(--bone);
+  }
+  .tagline{
+    margin:18px 0 0; max-width:34ch;
+    font-size:clamp(.98rem,1.5vw,1.12rem); line-height:1.5;
+    color:rgba(236,229,210,.86);
+  }
+
+  .denom{ text-align:center; user-select:none; }
+  .denom__n{
+    display:block;
+    font:400 clamp(7.5rem,17vw,13.5rem)/.78 var(--display);
+    color:transparent;
+    background:repeating-linear-gradient(0deg, var(--bone) 0 2px, transparent 2px 4.6px);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-stroke:1.4px var(--bone);
+    padding-bottom:.06em;
+  }
+  .denom__label{
+    display:block; margin-top:14px;
+    font:600 .62rem/1.5 var(--mono); letter-spacing:.24em; text-transform:uppercase;
+    color:rgba(236,229,210,.82);
+  }
+
+  .note__serial{
+    display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 34px;
+    margin:0; max-width:none; padding:13px clamp(46px,6vw,84px) 13px;
+    border-top:1px solid rgba(236,229,210,.3);
+    font:500 .74rem/1.5 var(--mono); letter-spacing:.06em;
+    color:rgba(236,229,210,.9);
+  }
+  .note__serial span{ white-space:nowrap; }
+  .note__serial .serial{ margin-left:auto; letter-spacing:.2em; color:#bfd2f3; }
+
+  .band{ height:22px; background:var(--band-on-green) repeat-x 0 50%; opacity:.5; }
+
+  /* ───────────── Layout ───────────── */
+  .wrap{
+    max-width:1180px; margin:0 auto;
+    padding:clamp(34px,6vw,76px) clamp(20px,5vw,56px) clamp(48px,7vw,96px);
+    display:grid; grid-template-columns:232px minmax(0,1fr);
+    gap:clamp(32px,6vw,84px);
+  }
+
+  .index{ align-self:start; position:sticky; top:28px; }
+  .index__title{
+    margin:0 0 12px; padding-bottom:10px;
+    border-bottom:3px double var(--ink);
+    font:600 .68rem/1 var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--sub);
+  }
+  .index ol{ list-style:none; margin:0; padding:0; counter-reset:idx; }
+  .index li{ counter-increment:idx; border-bottom:1px solid var(--rule); }
+  .index a{
+    display:grid; grid-template-columns:2.4em 1fr; gap:4px;
+    padding:8px 0; font-size:.86rem; line-height:1.35;
+    color:var(--sub); text-decoration:none;
+  }
+  .index a::before{
+    content:counter(idx, decimal-leading-zero);
+    font:500 .74rem/1.6 var(--mono); color:var(--faint);
+  }
+  .index a:hover, .index a:focus-visible{ color:var(--ink); }
+  .index a:hover::before, .index a:focus-visible::before{ color:var(--hi); }
+
+  main{ min-width:0; }
+
+  /* The short version: set as the note's legend. */
+  .short{
+    margin:0 0 clamp(36px,5vw,60px); max-width:46rem;
+    padding:4px 0 4px clamp(18px,2.4vw,28px);
+    border-left:3px double var(--hi);
+    font:400 clamp(1.22rem,2.3vw,1.72rem)/1.36 var(--display);
+    color:var(--ink);
+  }
+  .short b{
+    display:block; margin-bottom:10px;
+    font:600 .68rem/1 var(--mono); letter-spacing:.24em; text-transform:uppercase;
+    color:var(--hi);
+  }
+
+  /* Sections: a ruled ledger, entry number in the margin. */
+  .sec{
+    display:grid; grid-template-columns:clamp(3.4rem,7vw,5.6rem) minmax(0,1fr);
+    column-gap:clamp(8px,1.6vw,20px);
+    padding:clamp(24px,3.4vw,38px) 0 clamp(8px,1.6vw,16px);
+    border-top:3px double var(--ink);
+    scroll-margin-top:20px;
+  }
+  .sec__no{
+    font:400 clamp(2rem,4.6vw,3.3rem)/.9 var(--display);
+    color:var(--accent);
+    font-variant-numeric:lining-nums tabular-nums;
+  }
+  .sec__body{ min-width:0; position:relative; }
+  h2{
+    margin:.1em 0 14px;
+    font:650 clamp(1.08rem,1.7vw,1.3rem)/1.25 var(--sans);
+    letter-spacing:-.005em; color:var(--ink);
+    text-wrap:balance;
+  }
+  p{ margin:0 0 12px; max-width:68ch; }
+  strong{ font-weight:650; }
+
+  /* Lists whose items start with a bold term: term | description. */
+  .terms{ list-style:none; margin:14px 0 18px; padding:0; border-top:1px solid var(--rule); }
+  .terms li{
+    display:grid; grid-template-columns:minmax(9rem,13rem) minmax(0,1fr); gap:6px 24px;
+    padding:12px 0; border-bottom:1px solid var(--rule);
+  }
+  .terms strong{
+    font:600 .74rem/1.55 var(--mono); letter-spacing:.07em; text-transform:uppercase;
+    color:var(--accent);
+  }
+  .terms span{ max-width:60ch; }
+
+  /* Plain lists: engraved lozenge markers. */
+  .points{ list-style:none; margin:10px 0 16px; padding:0; }
+  .points li{ position:relative; padding:5px 0 5px 24px; max-width:66ch; }
+  .points li::before{
+    content:""; position:absolute; left:3px; top:.92em;
+    width:7px; height:7px; rotate:45deg;
+    border:1px solid var(--hi);
+  }
+
+  /* §2 — the statement of account: everything reads zero. */
+  .ledger{
+    margin:18px 0 20px; padding:0; max-width:34rem;
+    border-top:1px solid var(--ink);
+    font:500 .86rem/1.4 var(--mono);
+  }
+  .ledger div{ display:flex; align-items:baseline; gap:8px; padding:7px 0; }
+  .ledger dt{ margin:0; letter-spacing:.02em; }
+  .ledger dd{ margin:0; font-variant-numeric:tabular-nums; }
+  .ledger i{ flex:1; border-bottom:1px dotted var(--faint); translate:0 -4px; }
+  .ledger .ledger__head{ color:var(--faint); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; border-bottom:1px solid var(--rule); }
+  .ledger .ledger__head i{ border:0; }
+  .ledger .ledger__total{
+    margin-top:4px; border-top:1px solid var(--ink); border-bottom:3px double var(--ink);
+    font-weight:700; color:var(--accent);
+  }
+  .ledger .ledger__total i{ border:0; }
+
+  /* §3 — the two states, side by side. */
+  .states{ display:grid; grid-template-columns:1fr 1fr; gap:0; margin:18px 0 20px; border:1px solid var(--ink); }
+  .state{ padding:38px 20px 10px; position:relative; }
+  .state + .state{ border-left:1px solid var(--ink); }
+  .state::before{
+    content:attr(data-tag);
+    position:absolute; top:0; left:0; padding:5px 10px;
+    font:600 .62rem/1 var(--mono); letter-spacing:.2em; text-transform:uppercase;
+    background:var(--ink); color:var(--paper);
+  }
+  .state--off::before{ background:var(--sub); }
+  .state p{ max-width:none; font-size:.95rem; }
+
+  .aside{
+    margin:18px 0; padding:16px 20px;
+    background:var(--paper-2);
+    border-left:3px solid var(--accent);
+  }
+  .aside p{ max-width:66ch; }
+  .aside p:last-child{ margin-bottom:0; }
+
+  /* §7 — the one thing a reader must not miss, said plainly and in red. */
+  .stamp{
+    float:right; margin:2px 0 14px 28px; rotate:-5deg;
+    max-width:15.5rem; padding:11px 16px 10px; text-align:center;
+    border:3px double var(--red); color:var(--red);
+    font:700 .8rem/1.35 var(--mono); letter-spacing:.1em; text-transform:uppercase;
+    user-select:none;
+  }
+  .stamp small{ display:block; margin-top:5px; font-size:.68rem; font-weight:600; letter-spacing:.06em; }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:12px;
+    margin:6px 0 10px; padding:13px 20px 13px 16px;
+    background:var(--ink); color:var(--paper);
+    font:600 .78rem/1 var(--mono); letter-spacing:.14em; text-transform:uppercase; text-decoration:none;
+    border:1px solid var(--ink);
+    transition:background-color .15s, color .15s;
+  }
+  .btn svg{ width:17px; height:17px; flex:none; }
+  .btn::after{ content:"\2197"; font-size:1rem; line-height:0; }
+  .btn:hover, .btn:focus-visible{ background:transparent; color:var(--ink); }
+
+  .contact{
+    margin:6px 0 0; padding:0; max-width:36rem;
+    border-top:1px solid var(--ink); border-bottom:3px double var(--ink);
+  }
+  .contact div{
+    display:grid; grid-template-columns:8rem minmax(0,1fr); gap:8px 20px;
+    padding:11px 0; border-bottom:1px solid var(--rule);
+  }
+  .contact div:last-child{ border-bottom:0; }
+  .contact b{
+    font:600 .7rem/1.9 var(--mono); letter-spacing:.2em; text-transform:uppercase; color:var(--faint);
+  }
+  .contact a{ overflow-wrap:anywhere; }
+
+  /* ───────────── Footer ───────────── */
+  .foot{
+    color:var(--bone);
+    background:
+      repeating-linear-gradient(0deg, rgba(236,229,210,.05) 0 1px, transparent 1px 4px),
+      linear-gradient(100deg, #0b241d, #143e31 52%, #0c2720);
+  }
+  .foot__inner{
+    max-width:1180px; margin:0 auto;
+    padding:26px clamp(20px,5vw,56px) 30px;
+    display:flex; align-items:center; gap:16px;
+  }
+  .foot svg{ width:34px; height:34px; flex:none; }
+  .foot p{ margin:0; max-width:none; font:500 .72rem/1.6 var(--mono); letter-spacing:.06em; color:rgba(236,229,210,.84); }
+
+  /* ───────────── Small screens ───────────── */
+  @media (max-width:900px){
+    .wrap{ grid-template-columns:minmax(0,1fr); }
+    .index{ position:static; }
+    .index ol{ columns:2; column-gap:28px; }
+    .index li{ break-inside:avoid; }
+  }
+  @media (max-width:720px){
+    .note__body{
+      grid-template-columns:auto minmax(0,1fr);
+      padding:46px 26px 30px;
+    }
+    .denom{ grid-column:1 / -1; display:flex; align-items:center; gap:18px; text-align:left; }
+    .denom__n{ font-size:6.4rem; }
+    .denom__label{ margin-top:0; }
+    .note__serial{ padding-inline:26px; }
+    .note__serial .serial{ margin-left:0; }
+    .guilloche{ width:420px; }
+    .states{ grid-template-columns:1fr; }
+    .state + .state{ border-left:0; border-top:1px solid var(--ink); }
+    .terms li{ grid-template-columns:1fr; gap:2px; }
+    .stamp{ float:none; display:inline-block; margin:0 0 14px; }
+  }
+  @media (max-width:460px){
+    .index ol{ columns:1; }
+    .note__body{ grid-template-columns:1fr; }
+    .sec{ grid-template-columns:1fr; row-gap:8px; }
+    .contact div{ grid-template-columns:1fr; gap:0; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .guilloche{ animation:none; }
+    .btn{ transition:none; }
+  }
+
+  @media print{
+    :root{ --paper:#fff; --paper-2:#f3f3f3; --ink:#000; --sub:#222; --faint:#555; --rule:#bbb; --accent:#000; --hi:#000; --red:#000; }
+    .progress, .index, .skip, .guilloche, .band, .micro, .corner{ display:none !important; }
+    .note, .foot{ background:none; color:#000; }
+    .note__frame{ border-color:#000; outline-color:#000; }
+    h1, .eyebrow, .tagline, .denom__label, .note__serial, .note__serial .serial, .foot p{ color:#000; }
+    .denom__n{ -webkit-text-stroke:1px #000; background:none; }
+    .medallion{ box-shadow:0 0 0 1px #000; }
+    .wrap{ display:block; padding-top:24px; }
+    .sec{ break-inside:avoid; }
+    .btn{ background:none; color:#000; }
+    a{ color:#000; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#policy">Skip to the policy</a>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="note">
+  <div class="note__inner">
+    <div class="note__frame">
+
+      <div class="micro" aria-hidden="true">100% offline · no servers · no accounts · nothing to collect · 100% offline · no servers · no accounts · nothing to collect · 100% offline · no servers · no accounts · nothing to collect · 100% offline · no servers · no accounts · nothing to collect · 100% offline · no servers · no accounts · nothing to collect · 100% offline · no servers · no accounts · nothing to collect · 100% offline · no servers · no accounts · nothing to collect · 100% offline · no servers · no accounts · nothing to collect ·</div>
+
+      <div class="note__body">
+        <span class="corner corner--tl" aria-hidden="true">0</span>
+        <span class="corner corner--tr" aria-hidden="true">0</span>
+        <span class="corner corner--bl" aria-hidden="true">0</span>
+        <span class="corner corner--br" aria-hidden="true">0</span>
+
+        <div class="medallion"><img src="logo.png" alt="Finance me Local" width="132" height="132"></div>
+
+        <div class="note__title">
+          <p class="eyebrow">Legal · Finance me Local</p>
+          <h1>Privacy Policy</h1>
+          <p class="tagline">100% offline. No servers. No accounts. Nothing to collect.</p>
+        </div>
+
+        <div class="denom" aria-hidden="true">
+          <span class="denom__coin">
+            <svg class="guilloche" viewBox="-112 -112 224 224" focusable="false">
+              <defs>
+                <ellipse id="g0" rx="100" ry="33"/>
+                <g id="g1"><use href="#g0"/><use href="#g0" transform="rotate(5.625)"/></g>
+                <g id="g2"><use href="#g1"/><use href="#g1" transform="rotate(11.25)"/></g>
+                <g id="g3"><use href="#g2"/><use href="#g2" transform="rotate(22.5)"/></g>
+                <g id="g4"><use href="#g3"/><use href="#g3" transform="rotate(45)"/></g>
+                <g id="g5"><use href="#g4"/><use href="#g4" transform="rotate(90)"/></g>
+              </defs>
+              <g fill="none" stroke="currentColor" stroke-width=".3">
+                <use href="#g5"/>
+                <use href="#g5" transform="scale(.6) rotate(2.8)" stroke-width=".5"/>
+                <circle r="104" stroke-dasharray=".8 2.4" stroke-width=".8"/>
+                <circle r="109"/>
+              </g>
+            </svg>
+            <span class="denom__n">0</span>
+          </span>
+          <span class="denom__label">Personal data<br>collected</span>
+        </div>
+      </div>
+
+      <p class="note__serial">
+        <span>Last updated: November 12, 2026</span>
+        <span>Developer: BaveSerdem</span>
+        <span class="serial" aria-hidden="true">FML · PP · 2026 11 12</span>
+      </p>
+
+      <div class="micro micro--foot" aria-hidden="true">your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device · your data is stored locally on your device ·</div>
+
+    </div>
+  </div>
+  <div class="band" aria-hidden="true"></div>
+</header>
+
+<div class="wrap">
+
+  <nav class="index" aria-label="Contents">
+    <p class="index__title">Contents</p>
+    <ol>
+      <li><a href="#s1">What This App Does</a></li>
+      <li><a href="#s2">Data Collection</a></li>
+      <li><a href="#s3">Your Data and How It's Protected</a></li>
+      <li><a href="#s4">Permissions We Use</a></li>
+      <li><a href="#s5">Backups</a></li>
+      <li><a href="#s6">Your Rights and Control</a></li>
+      <li><a href="#s7">Password and Data Recovery</a></li>
+      <li><a href="#s8">Disclaimer of Liability</a></li>
+      <li><a href="#s9">Open Source</a></li>
+      <li><a href="#s10">Children's Privacy</a></li>
+      <li><a href="#s11">Changes to This Policy</a></li>
+      <li><a href="#s12">Contact</a></li>
+    </ol>
+  </nav>
+
+  <main id="policy">
+
+    <p class="short">
+      <b>The short version:</b> This app is designed to work without an internet connection.
+      Your data is stored locally on your device. We have no servers, no user accounts, and
+      no mechanism to access your information.
+    </p>
+
+    <section class="sec" id="s1">
+      <div class="sec__no" aria-hidden="true">01</div>
+      <div class="sec__body">
+        <h2>What This App Does</h2>
+        <p>Finance me Local is an offline personal finance and subscription tracker. It is designed to run entirely on your device with no connection to the internet, no servers, and no user accounts.</p>
+        <p>Your data is stored locally on your device, with no transmission capability built into the application.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s2">
+      <div class="sec__no" aria-hidden="true">02</div>
+      <div class="sec__body">
+        <h2>Data Collection</h2>
+        <p>The application does not collect personal data from users.</p>
+        <p>No name. No email. No location. No usage statistics. No crash reports. No analytics. No advertising identifiers.</p>
+        <dl class="ledger" aria-hidden="true">
+          <div class="ledger__head"><dt>Item</dt><i></i><dd>Collected</dd></div>
+          <div><dt>Name</dt><i></i><dd>0</dd></div>
+          <div><dt>Email</dt><i></i><dd>0</dd></div>
+          <div><dt>Location</dt><i></i><dd>0</dd></div>
+          <div><dt>Usage statistics</dt><i></i><dd>0</dd></div>
+          <div><dt>Crash reports</dt><i></i><dd>0</dd></div>
+          <div><dt>Analytics</dt><i></i><dd>0</dd></div>
+          <div><dt>Advertising identifiers</dt><i></i><dd>0</dd></div>
+          <div class="ledger__total"><dt>Total</dt><i></i><dd>0</dd></div>
+        </dl>
+        <p>The application does not sell, rent, share, or disclose personal data to third parties. It does not include any functionality to transmit data to external parties.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s3">
+      <div class="sec__no" aria-hidden="true">03</div>
+      <div class="sec__body">
+        <h2>Your Data and How It's Protected</h2>
+        <p>Your financial records are stored only on your device. When you first open the app, you choose whether to protect them with a password; you can also enable this later from Settings → Security &amp; Privacy.</p>
+        <div class="states">
+          <div class="state" data-tag="Encryption on">
+            <p><strong>If you enable encryption:</strong> your transactions and recurring items are stored in files encrypted with AES-256. The encryption key is derived from your password (PBKDF2-HMAC-SHA256, 100,000 iterations, with a random salt) and is not stored. The password itself is never stored; the app keeps only a verification value that cannot be reversed into the password. A short or common password can still be guessed by someone who has your device, so choose a strong one.</p>
+          </div>
+          <div class="state state--off" data-tag="Encryption off">
+            <p><strong>If you skip encryption:</strong> those files are stored unencrypted. They are then protected only by Android's standard separation between apps, which does not apply on a rooted device or to anyone who can read your device's storage.</p>
+          </div>
+        </div>
+        <p>In both cases, display preferences such as language, colours and currency symbol are stored without encryption, as they are not financial data.</p>
+        <div class="aside">
+          <p><strong>Fingerprint unlock</strong> is optional. If you turn it on, a copy of your encryption key is kept on your device, in storage backed by the Android Keystore, so the app can open without your password. That copy is protected by your device's lock screen and by Android's app separation, not by your password. On a rooted or otherwise compromised device it could be used to open your data without your password. If that matters to you, leave fingerprint unlock off. Turning it off in Settings → Security &amp; Privacy removes the stored copy; turning it on again asks for your password.</p>
+        </div>
+        <p>We do not have your password, your encryption key or a copy of your data, so we cannot read, recover or reset any of them.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s4">
+      <div class="sec__no" aria-hidden="true">04</div>
+      <div class="sec__body">
+        <h2>Permissions We Use</h2>
+        <p>The app does not request the INTERNET permission at all, so it has no ability to send or receive data over a network. It declares the following permissions:</p>
+        <ul class="terms">
+          <li><strong>Biometric (fingerprint/face):</strong> <span>To offer biometric unlock. Your biometric data is handled entirely by your device's operating system and is never available to this app; the app only receives a yes-or-no answer.</span></li>
+          <li><strong>Notifications:</strong> <span>To show a reminder one day before a recurring item is due. Reminders are created on your device. The reminder text (the item's name and amount) is handed to Android's notification system, which stores it on the device and may show it on the lock screen according to your notification settings. Timing is approximate: Android may delay a reminder to save battery.</span></li>
+          <li><strong>Boot completed:</strong> <span>To re-register your pending reminders after the device restarts.</span></li>
+          <li><strong>Vibrate:</strong> <span>Declared by the notification library, for reminder alerts.</span></li>
+        </ul>
+        <p>The app also opts out of Android's cloud backup and device-to-device transfer, so the system does not copy the app's data anywhere. If you change devices, use the export described in section 5.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s5">
+      <div class="sec__no" aria-hidden="true">05</div>
+      <div class="sec__body">
+        <h2>Backups</h2>
+        <p>The app lets you export your data as an encrypted backup file (.vault). This file:</p>
+        <ul class="points">
+          <li>Is protected by a password you choose at export time</li>
+          <li>Can only be opened with that password</li>
+          <li>Is stored wherever you choose on your device or external storage</li>
+          <li>Is entirely your responsibility once exported</li>
+        </ul>
+        <p>We have no access to your backup files and cannot recover them if the password is lost.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s6">
+      <div class="sec__no" aria-hidden="true">06</div>
+      <div class="sec__body">
+        <h2>Your Rights and Control</h2>
+        <p>You are in control of your data at all times.</p>
+        <ul class="terms">
+          <li><strong>View:</strong> <span>All your data is visible within the app</span></li>
+          <li><strong>Export:</strong> <span>Create an encrypted backup at any time</span></li>
+          <li><strong>Delete:</strong> <span>Settings → Security &amp; Privacy → Delete All Data. After you confirm, the app asks Android to clear all of the app's data (the same operation as "Clear storage" in the system settings) and then closes. Exported backup files are not affected.</span></li>
+          <li><strong>Uninstall:</strong> <span>Removing the app removes all locally stored application data from your device. Exported backup files remain under your control and are not automatically removed.</span></li>
+        </ul>
+        <p>There is no account to close and no server-side data to request deletion of.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s7">
+      <div class="sec__no" aria-hidden="true">07</div>
+      <div class="sec__body">
+        <h2>Password and Data Recovery</h2>
+        <div class="stamp" aria-hidden="true">Forgot your password?<small>Without a backup, your data is gone for good</small></div>
+        <p>If you forget your password and have no backup, your data cannot be recovered. This is by design — it means no one else can access it either. We have no recovery mechanism and no ability to retrieve lost data on your behalf.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s8">
+      <div class="sec__no" aria-hidden="true">08</div>
+      <div class="sec__body">
+        <h2>Disclaimer of Liability</h2>
+        <p>To the extent permitted by applicable law, the developer is not responsible for:</p>
+        <ul class="points">
+          <li>Data loss resulting from forgotten passwords</li>
+          <li>Data loss resulting from device damage, theft, or factory reset</li>
+          <li>Backup files that are lost, corrupted, or become inaccessible</li>
+          <li>Any financial decisions made based on information entered into the app</li>
+          <li>Compatibility issues arising from future operating system updates</li>
+        </ul>
+        <p>This application is provided as-is, without warranty of any kind. It is a tool to assist with personal finance tracking — it does not constitute financial advice.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s9">
+      <div class="sec__no" aria-hidden="true">09</div>
+      <div class="sec__body">
+        <h2>Open Source</h2>
+        <p>The complete source code is publicly available for independent review and technical audit.</p>
+        <a class="btn" href="https://github.com/BaveSerdem/Finance-me-Local" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.5 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.37-3.37-1.37-.46-1.19-1.11-1.51-1.11-1.51-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 2.5-.35c.85 0 1.71.12 2.5.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.95.68 1.92 0 1.39-.01 2.51-.01 2.85 0 .28.18.61.69.5A10.03 10.03 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
+          View source on GitHub
+        </a>
+      </div>
+    </section>
+
+    <section class="sec" id="s10">
+      <div class="sec__no" aria-hidden="true">10</div>
+      <div class="sec__body">
+        <h2>Children's Privacy</h2>
+        <p>This app is not directed at children under the age of 13. The application does not collect personal data from any user regardless of age, and has no internet connectivity.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s11">
+      <div class="sec__no" aria-hidden="true">11</div>
+      <div class="sec__body">
+        <h2>Changes to This Policy</h2>
+        <p>The date at the top of this policy reflects when it was last updated. We encourage periodic review. Material changes will be communicated within the app where reasonably possible.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s12">
+      <div class="sec__no" aria-hidden="true">12</div>
+      <div class="sec__body">
+        <h2>Contact</h2>
+        <div class="contact">
+          <div><b>Developer:</b> <span>BaveSerdem</span></div>
+          <div><b>Email:</b> <a href="mailto:listok.kawa@gmail.com">listok.kawa@gmail.com</a></div>
+          <div><b>Source:</b> <a href="https://github.com/BaveSerdem/Finance-me-Local" target="_blank" rel="noopener">github.com/BaveSerdem/Finance-me-Local</a></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="foot">
+  <div class="band" aria-hidden="true"></div>
+  <div class="foot__inner">
+    <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <g fill="#ece5d2">
+        <rect x="13" y="12" width="9" height="11" rx="3.5"/>
+        <rect x="13" y="26.5" width="9" height="11" rx="3.5"/>
+        <rect x="13" y="41" width="9" height="11" rx="3.5"/>
+        <rect x="25.5" y="12" width="27" height="9" rx="4.5"/>
+      </g>
+      <rect x="29" y="26" width="23" height="11" rx="5.5" fill="#c0563f"/>
+      <circle cx="45" cy="31.5" r="8" fill="#c0563f"/>
+      <path d="M45 27.6a2.3 2.3 0 0 1 1.3 4.2l.8 3.6h-4.2l.8-3.6A2.3 2.3 0 0 1 45 27.6Z" fill="#0e2a22"/>
+    </svg>
+    <p>© 2026 BaveSerdem — Finance me Local · 100% Offline Personal Finance Manager</p>
+  </div>
+</footer>
+
+</body>
+</html>
